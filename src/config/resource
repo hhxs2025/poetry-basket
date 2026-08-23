@@ -1,0 +1,14 @@
+{
+  "data-share": {
+    "shares": [
+      {
+        "name": "poetry-basket",
+        "permission": {
+          "rw": [
+            "poetry-basket"
+          ]
+        }
+      }
+    ]
+  }
+}

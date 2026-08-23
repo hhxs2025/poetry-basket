@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>诗篓 · 录诗</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h2>📜诗篓-录诗</h2>
+            <nav>
+                <a href="/">首页</a>
+                <a href="/check">格律</a>
+                <a href="/create" class="active">录诗</a>
+                <span id="adminLink" style="display:none;"><a href="/admin">管理</a></span>
+                <a href="#" onclick="logout()" style="color:#b0a898;font-size:0.85rem;">退出</a>
+            </nav>
+        </header>
+
+        <form id="poemForm">
+            <div class="form-group">
+                <label>题目 <span class="required">*</span></label>
+                <input type="text" id="title" placeholder="如：静夜思" required>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>作者 <span class="required">*</span></label>
+                    <input type="text" id="author" placeholder="如：李白" required>
+                </div>
+                <div class="form-group">
+                    <label>朝代</label>
+                    <input type="text" id="dynasty" placeholder="如：唐、宋">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>体裁</label>
+                <select id="genre">
+                    <option value="五绝">五绝</option>
+                    <option value="七绝">七绝</option>
+                    <option value="古绝">古绝</option>
+                    <option value="五律">五律</option>
+                    <option value="七律">七律</option>
+                    <option value="排律">排律</option>
+                    <option value="古风">古风</option>
+                    <option value="词">词</option>
+                    <option value="其他">其他</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>正文 <span class="required">*</span></label>
+                <textarea id="content" class="content-textarea" placeholder="每行一句，如：&#10;床前明月光&#10;疑是地上霜" required></textarea>
+                <div class="help">每行一句，换行分隔</div>
+            </div>
+
+            <div class="check-section">
+                <div class="check-header">
+                    <span class="title">格律速检</span>
+                    <button type="button" id="checkBtn">检测当前正文</button>
+                </div>
+                <div id="checkLegend" class="legend" style="display:none;">
+                    图例：<span class="ping">—</span> 平声 &nbsp;│&nbsp; <span class="ze">│</span> 仄声 &nbsp;│&nbsp; <span class="unknown">○</span> 中（未收录）
+                </div>
+                <div id="checkResult" class="check-result"></div>
+                <div class="help" style="margin-top:0.3rem;">按平水韵粗略判断押韵与平仄，仅供参考</div>
+            </div>
+
+            <div class="form-group">
+                <label>笺注</label>
+                <textarea id="annotation" placeholder="注释、典故、字词考据…" style="min-height:80px;"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>赏析</label>
+                <textarea id="appreciation" placeholder="个人赏析、感悟、评点…" style="min-height:80px;"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>主题</label>
+                <input type="text" id="tags" placeholder="如：思乡, 写景, 哲理（用英文逗号分隔）">
+                <div class="help">多个主题用英文逗号分隔</div>
+            </div>
+
+            <div class="form-actions" style="display:flex;gap:0.8rem;margin-top:1.5rem;padding-top:1.2rem;border-top:1px solid #e0dcd4;">
+                <button type="button" class="btn" onclick="location.href='/'">取消</button>
+                <button type="submit" class="btn btn-primary" id="submitBtn">存入诗篓</button>
+            </div>
+        </form>
+
+        <footer>诗篓-私人诗词工作台</footer>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <script>
+        var toast = document.getElementById('toast');
+        var toastTimer = null;
+
+        function showToast(msg, type) {
+            toast.textContent = msg;
+            toast.className = 'toast' + (type ? ' ' + type : '');
+            void toast.offsetWidth;
+            toast.classList.add('show');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(function() { toast.classList.remove('show'); }, 3000);
+        }
+
+        function logout() {
+            if (!confirm('确认退出？')) return;
+            fetch('/api/logout', { method: 'POST' })
+                .then(function(r) { return r.json(); })
+                .then(function(res) {
+                    if (res.code === 0) location.href = '/login';
+                });
+        }
+
+        function checkAdmin() {
+            fetch('/api/user')
+                .then(function(r) { return r.json(); })
+                .then(function(res) {
+                    if (res.code === 0 && res.data.admin) {
+                        var el = document.getElementById('adminLink');
+                        if (el) el.style.display = 'inline';
+                    }
+                })
+                .catch(function() {});
+        }
+
+        var checkBtn = document.getElementById('checkBtn');
+        var checkResult = document.getElementById('checkResult');
+        var checkLegend = document.getElementById('checkLegend');
+        var contentTextarea = document.getElementById('content');
+
+        checkBtn.addEventListener('click', function() {
+            var text = contentTextarea.value.trim();
+            if (!text) {
+                showToast('请先输入正文内容', 'error');
+                return;
+            }
+
+            checkBtn.textContent = '检测中…';
+            checkBtn.disabled = true;
+
+            fetch('/api/check', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: text })
+            }).then(function(r) { return r.json(); }).then(function(res) {
+                checkBtn.textContent = '检测当前正文';
+                checkBtn.disabled = false;
+
+                if (res.code !== 0 || res.data.error) {
+                    checkResult.style.display = 'block';
+                    checkResult.innerHTML = '<span class="fail">' + (res.data && res.data.error ? res.data.error : '检测失败') + '</span>';
+                    return;
+                }
+
+                var d = res.data;
+                var html = '';
+                var toneMap = { '平': '—', '仄': '│', '？': '○' };
+
+                d.lines.forEach(function(line) {
+                    var toneStr = line.chars.map(function(ch) {
+                        return ch.char + (toneMap[ch.tone] || ch.tone);
+                    }).join(' ');
+                    html += '<div style="border-bottom:1px dashed #e8e4dc;padding:0.2rem 0;">' +
+                        '<span>' + line.line + '</span>' +
+                        '<span style="color:#8a8a7a;font-size:0.85rem;margin-left:0.6rem;">' +
+                        '【' + line.length + '字】' + toneStr +
+                        (line.is_even ? ' ⬅️偶句' : '') +
+                        '</span></div>';
+                });
+
+                var cls = d.rhyme_ok ? 'ok' : 'fail';
+                html += '<div style="margin-top:0.5rem;font-weight:500;" class="' + cls + '">' + d.conclusion + '</div>';
+                html += '<div style="color:#8a8a7a;font-size:0.8rem;margin-top:0.2rem;">首句韵部：' + (d.first_rhyme || '未识别') + '</div>';
+                html += '<div style="color:#b0a898;font-size:0.75rem;margin-top:0.2rem;">* 按平水韵粗略判断，近体诗一般押平声韵</div>';
+
+                checkResult.innerHTML = html;
+                checkResult.style.display = 'block';
+                checkLegend.style.display = 'inline-block';
+            }).catch(function() {
+                checkBtn.textContent = '检测当前正文';
+                checkBtn.disabled = false;
+                showToast('检测请求失败', 'error');
+            });
+        });
+
+        var form = document.getElementById('poemForm');
+        var submitBtn = document.getElementById('submitBtn');
+
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            var data = {
+                title: document.getElementById('title').value.trim(),
+                author: document.getElementById('author').value.trim(),
+                dynasty: document.getElementById('dynasty').value.trim(),
+                genre: document.getElementById('genre').value,
+                content: document.getElementById('content').value.trim(),
+                annotation: document.getElementById('annotation').value.trim(),
+                appreciation: document.getElementById('appreciation').value.trim(),
+                tags: document.getElementById('tags').value.trim()
+            };
+
+            if (!data.title) { showToast('请填写题目', 'error'); return; }
+            if (!data.author) { showToast('请填写作者', 'error'); return; }
+            if (!data.content) { showToast('请填写正文', 'error'); return; }
+
+            submitBtn.textContent = '保存中…';
+            submitBtn.disabled = true;
+
+            fetch('/api/poem', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            }).then(function(r) { return r.json(); }).then(function(res) {
+                submitBtn.textContent = '存入诗篓';
+                submitBtn.disabled = false;
+
+                if (res.code === 0) {
+                    showToast('录入成功', 'success');
+                    setTimeout(function() { location.href = '/detail/' + res.id; }, 600);
+                } else {
+                    showToast(res.msg || '录入失败', 'error');
+                }
+            }).catch(function() {
+                submitBtn.textContent = '存入诗篓';
+                submitBtn.disabled = false;
+                showToast('网络错误，请重试', 'error');
+            });
+        });
+
+        (function() {
+            var params = new URLSearchParams(window.location.search);
+            var content = params.get('content');
+            if (content) {
+                document.getElementById('content').value = decodeURIComponent(content);
+                setTimeout(function() { checkBtn.click(); }, 400);
+            }
+        })();
+
+        checkAdmin();
+    </script>
+</body>
+</html>

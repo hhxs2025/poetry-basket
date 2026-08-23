@@ -1,0 +1,15 @@
+appname=poetry-basket
+version=1.1.0
+display_name=诗篓
+desc="""诗篓 是一款专为古典诗词爱好者设计的个人诗词管理工具。它既是一个私人诗库，也是一个创作辅助工具，帮助您录诗、整理、品评、校验格律，所有数据存储在您自己的 NAS 上，完全离线、完全私密。"""
+platform=x86
+source=thirdparty
+maintainer=晦华先生
+maintainer_url=https://gitee.com/hhxs2025/poetry-basket
+distributor=晦华先生
+ctl_stop=true
+desktop_uidir=ui
+desktop_applaunchname=poetry-basket.Application
+service_port=5678
+checkport=true
+disable_authorization_path=false

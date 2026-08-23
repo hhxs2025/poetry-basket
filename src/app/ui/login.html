@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>诗篓 · 登录</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        .login-container {
+            max-width: 380px;
+            margin: 60px auto 0;
+            padding: 2rem 2rem 1.8rem;
+            background: #fcfbf9;
+            border: 1px solid #d6d0c8;
+            border-radius: 6px;
+        }
+        .login-container h2 {
+            font-weight: 400;
+            font-size: 1.6rem;
+            text-align: center;
+            color: #4a4a3a;
+            margin-bottom: 1.5rem;
+            letter-spacing: 2px;
+        }
+        .login-container input {
+            width: 100%;
+            padding: 0.6rem 0.8rem;
+            border: 1px solid #d6d0c8;
+            border-radius: 4px;
+            font-size: 0.95rem;
+            background: white;
+            margin-bottom: 0.8rem;
+            box-sizing: border-box;
+            font-family: inherit;
+        }
+        .login-container input:focus {
+            outline: none;
+            border-color: #a8a898;
+        }
+        .login-container button {
+            width: 100%;
+            padding: 0.6rem;
+            border: 1px solid #6a7a6a;
+            border-radius: 4px;
+            background: #6a7a6a;
+            color: #f5f2ed;
+            font-size: 1rem;
+            cursor: pointer;
+            font-family: inherit;
+            margin-bottom: 0.8rem;
+        }
+        .login-container button:hover {
+            background: #5a6a5a;
+        }
+        .login-container .error {
+            color: #a07060;
+            font-size: 0.9rem;
+            text-align: center;
+            margin-bottom: 0.6rem;
+            display: none;
+        }
+        .login-container .hint {
+            text-align: center;
+            font-size: 0.8rem;
+            color: #b0a898;
+            padding-top: 0.8rem;
+            border-top: 1px solid #e8e4dc;
+        }
+        .login-container .dev-info {
+            text-align: center;
+            font-size: 0.75rem;
+            color: #b0a898;
+            padding-top: 0.6rem;
+            margin-top: 0.6rem;
+            border-top: 1px solid #e8e4dc;
+            line-height: 1.6;
+        }
+        .login-container .dev-info a {
+            color: #7a8a7a;
+            text-decoration: none;
+        }
+        .login-container .dev-info a:hover {
+            text-decoration: underline;
+            color: #5a6a5a;
+        }
+        footer {
+            margin-top: 2rem;
+            padding-top: 1rem;
+            border-top: 1px solid #e0dcd4;
+            font-size: 0.8rem;
+            color: #b0a898;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <h2>📜诗篓-登录</h2>
+        <input type="text" id="username" placeholder="用户名" autofocus>
+        <input type="password" id="password" placeholder="密码">
+        <button id="loginBtn">进入</button>
+        <div id="error" class="error">用户名或密码错误</div>
+        <div class="hint">默认账号/密码: admin / admin123</div>
+        <div class="dev-info">
+            ◎开发者:晦华先生 | <a href="https://gitee.com/hhxs2025/poetry-basket" target="_blank" rel="noopener noreferrer">◎查看项目</a><br>
+            ◎联系方式:2303537063@qq.com；          
+        </div>
+    </div>
+    <footer>诗篓-私人诗词工作台</footer>
+    <script>
+        var usernameEl = document.getElementById('username');
+        var passwordEl = document.getElementById('password');
+        var loginBtn = document.getElementById('loginBtn');
+        var errorEl = document.getElementById('error');
+
+        function doLogin() {
+            var username = usernameEl.value.trim();
+            var password = passwordEl.value.trim();
+            if (!username || !password) return;
+            loginBtn.textContent = '登录中…';
+            loginBtn.disabled = true;
+            errorEl.style.display = 'none';
+
+            fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: username, password: password })
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(res) {
+                loginBtn.textContent = '进入';
+                loginBtn.disabled = false;
+                if (res.code === 0) {
+                    location.href = '/';
+                } else {
+                    errorEl.style.display = 'block';
+                    passwordEl.value = '';
+                    passwordEl.focus();
+                }
+            })
+            .catch(function() {
+                loginBtn.textContent = '进入';
+                loginBtn.disabled = false;
+                errorEl.textContent = '网络错误，请重试';
+                errorEl.style.display = 'block';
+            });
+        }
+
+        loginBtn.addEventListener('click', doLogin);
+        usernameEl.addEventListener('keyup', function(e) {
+            if (e.key === 'Enter') passwordEl.focus();
+        });
+        passwordEl.addEventListener('keyup', function(e) {
+            if (e.key === 'Enter') doLogin();
+        });
+    </script>
+</body>
+</html>

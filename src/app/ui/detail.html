@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>诗篓 · 详情</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        .detail-container { max-width: 780px; margin: 0 auto; }
+        .poem-header {
+            border-bottom: 1px solid #e0dcd4;
+            padding-bottom: 0.8rem;
+            margin-bottom: 1rem;
+        }
+        .poem-header h2 {
+            font-weight: 400;
+            font-size: 1.2rem;
+            letter-spacing: 2px;
+            margin-bottom: 0.2rem;
+        }
+        .poem-header .meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.6rem 1.2rem;
+            color: #8a847a;
+            font-size: 0.9rem;
+        }
+        .poem-header .meta .genre-badge {
+            background: #edeae4;
+            padding: 0 0.6rem;
+            border-radius: 3px;
+            font-size: 0.8rem;
+            color: #6b655a;
+        }
+        .poem-header .meta .owner {
+            color: #b0a898;
+            font-size: 0.85rem;
+        }
+        .poem-body {
+            font-size: 0.85rem;
+            line-height: 2.2;
+            white-space: pre-wrap;
+            padding: 0.8rem 0 1.2rem 0;
+            border-bottom: 1px solid #e0dcd4;
+            margin-bottom: 1.2rem;
+            font-family: "Noto Serif SC", "宋体", serif;
+        }
+        .section-block { margin-bottom: 1.2rem; }
+        .section-block .section-title {
+            font-weight: 500;
+            color: #5a554a;
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+            margin-bottom: 0.2rem;
+        }
+        .section-block .section-content {
+            background: #f6f4f0;
+            padding: 0.6rem 0.9rem;
+            border-radius: 4px;
+            color: #3d3a32;
+            font-size: 0.9rem;
+            white-space: pre-wrap;
+            line-height: 1.8;
+        }
+        .themes-display {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.3rem;
+            margin-top: 0.2rem;
+        }
+        .themes-display .theme {
+            background: #edeae4;
+            padding: 0.05rem 0.7rem;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            color: #6b655a;
+        }
+        .action-bar {
+            display: flex;
+            gap: 0.8rem;
+            margin-top: 1.5rem;
+            padding-top: 1rem;
+            border-top: 1px solid #e0dcd4;
+            flex-wrap: wrap;
+        }
+        .action-bar button {
+            padding: 0.4rem 1.2rem;
+            border: 1px solid #d6d0c8;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.9rem;
+            background: #ede8e0;
+            color: #4a4a3a;
+            transition: 0.15s;
+        }
+        .action-bar button:hover { background: #e0dcd4; }
+        .action-bar button.primary {
+            background: #6a7a6a;
+            color: #f5f2ed;
+            border-color: #6a7a6a;
+        }
+        .action-bar button.primary:hover { background: #5a6a5a; }
+        .action-bar button.danger {
+            background: #d4c8c0;
+            color: #6a4a3a;
+            border-color: #c8b8b0;
+        }
+        .action-bar button.danger:hover { background: #c8b8b0; }
+        .action-bar .spacer { flex: 1; }
+
+        .loading { text-align: center; padding: 3rem 0; color: #b0a898; }
+        .not-found { text-align: center; padding: 3rem 0; color: #b0a898; }
+        .not-found .icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
+        .action-bar .disabled-msg {
+            color: #b0a898;
+            font-size: 0.85rem;
+            padding: 0.4rem 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container detail-container">
+        <header>
+            <h2>📜诗篓-详情</h2>
+            <nav>
+                <a href="/">首页</a>
+                <a href="/check">格律</a>
+                <a href="/create">录诗</a>
+                <span id="adminLink" style="display:none;"><a href="/admin">管理</a></span>
+                <a href="#" onclick="logout()" style="color:#b0a898;font-size:0.85rem;">退出</a>
+            </nav>
+        </header>
+
+        <div id="detailArea"><div class="loading">加载中…</div></div>
+
+        <footer>诗篓-私人诗词工作台</footer>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <script>
+        var toast = document.getElementById('toast');
+        var toastTimer = null;
+        var currentUser = '';
+        var isAdmin = false;
+
+        function showToast(msg, type) {
+            toast.textContent = msg;
+            toast.className = 'toast' + (type ? ' ' + type : '');
+            void toast.offsetWidth;
+            toast.classList.add('show');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(function() { toast.classList.remove('show'); }, 3000);
+        }
+
+        function logout() {
+            if (!confirm('确认退出？')) return;
+            fetch('/api/logout', { method: 'POST' })
+                .then(function(r) { return r.json(); })
+                .then(function(res) {
+                    if (res.code === 0) location.href = '/login';
+                });
+        }
+
+        function checkAdmin() {
+            fetch('/api/user')
+                .then(function(r) { return r.json(); })
+                .then(function(res) {
+                    if (res.code === 0) {
+                        currentUser = res.data.username;
+                        isAdmin = res.data.admin;
+                        var el = document.getElementById('adminLink');
+                        if (el && isAdmin) el.style.display = 'inline';
+                    }
+                })
+                .catch(function() {});
+        }
+
+        function canEdit(poemUserId) {
+            return currentUser === poemUserId || isAdmin;
+        }
+
+        var pathParts = window.location.pathname.split('/');
+        var poemId = pathParts[pathParts.length - 1];
+        var area = document.getElementById('detailArea');
+
+        function loadDetail() {
+            fetch('/api/poem/' + poemId).then(function(r) { return r.json(); }).then(function(res) {
+                if (res.code === 404) {
+                    area.innerHTML = '<div class="not-found"><div class="icon">📭</div><p>未找到这首诗</p><a href="/" style="color:#6a7a6a;">返回诗库</a></div>';
+                    return;
+                }
+                if (res.code !== 0) {
+                    area.innerHTML = '<div class="not-found"><p>加载失败</p></div>';
+                    return;
+                }
+                renderPoem(res.data);
+            }).catch(function() {
+                area.innerHTML = '<div class="not-found"><p>网络错误</p></div>';
+            });
+        }
+
+        function renderPoem(p) {
+            var themes = p.tags ? p.tags.split(',').map(function(t) { return t.trim(); }).filter(function(t) { return t; }) : [];
+            var hasAnnotation = p.annotation && p.annotation.trim();
+            var hasAppreciation = p.appreciation && p.appreciation.trim();
+            var displayName = p.display_name || p.user_id || '未知';
+            var editable = canEdit(p.user_id);
+
+            var html = '<div class="poem-header"><h2>' + p.title + '</h2>' +
+                '<div class="meta">' +
+                '<span>' + p.author + '</span>' +
+                (p.dynasty ? '<span>' + p.dynasty + '</span>' : '') +
+                '<span class="genre-badge">' + (p.genre || '诗') + '</span>' +
+                '<span class="owner">📌 录入人：' + displayName + '</span>' +
+                '<span style="font-size:0.8rem;color:#b0a898;">录入于 ' + (p.created_at ? p.created_at.slice(0,10) : '') + '</span>' +
+                '</div></div>' +
+                '<div class="poem-body">' + p.content + '</div>';
+
+            if (hasAnnotation) {
+                html += '<div class="section-block"><div class="section-title">笺注</div><div class="section-content">' + p.annotation + '</div></div>';
+            }
+
+            if (hasAppreciation) {
+                html += '<div class="section-block"><div class="section-title">赏析</div><div class="section-content">' + p.appreciation + '</div></div>';
+            }
+
+            if (themes.length) {
+                html += '<div class="section-block"><div class="section-title">主题</div><div class="themes-display">' + themes.map(function(t) { return '<span class="theme">' + t + '</span>'; }).join('') + '</div></div>';
+            }
+
+            html += '<div class="action-bar">';
+
+            if (editable) {
+                html += '<button class="primary" onclick="location.href=\'/edit/' + p.id + '\'">编辑</button>' +
+                        '<button class="danger" onclick="deletePoem(' + p.id + ')">删除</button>';
+            } else {
+                html += '<span class="disabled-msg">此诗由 ' + displayName + ' 录入，仅供阅读</span>';
+            }
+
+            html += '<span class="spacer"></span>' +
+                '<button onclick="location.href=\'/\'">← 返回诗库</button>' +
+                '</div>';
+
+            area.innerHTML = html;
+        }
+
+        function deletePoem(id) {
+            if (!confirm('确认删除这首诗吗？此操作不可撤销。')) return;
+            fetch('/api/poem/' + id, { method: 'DELETE' }).then(function(r) { return r.json(); }).then(function(res) {
+                if (res.code === 0) {
+                    showToast('已删除', 'success');
+                    setTimeout(function() { location.href = '/'; }, 600);
+                } else {
+                    showToast(res.msg || '删除失败', 'error');
+                }
+            }).catch(function() { showToast('网络错误', 'error'); });
+        }
+
+        checkAdmin();
+        loadDetail();
+    </script>
+</body>
+</html>

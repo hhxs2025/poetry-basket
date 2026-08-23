@@ -1,0 +1,341 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, "Noto Serif SC", "宋体", serif;
+    background: #f5f2ed;
+    color: #3a3a3a;
+    padding: 2rem 1rem;
+    line-height: 1.7;
+    font-size: 0.95rem;
+}
+
+.container {
+    max-width: 820px;
+    margin: 0 auto;
+}
+
+/* ===== 头部 ===== */
+header {
+    border-bottom: 1px solid #d6d0c8;
+    padding-bottom: 0.8rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    flex-wrap: wrap;
+}
+
+header h2 {
+    font-weight: 400;
+    font-size: 1.2rem;
+    letter-spacing: 2px;
+    color: #4a4a3a;
+}
+
+/* ===== 导航 ===== */
+nav a {
+    color: #4a4a3a;
+    text-decoration: none;
+    margin-left: 1.2rem;
+    font-size: 1.05rem;
+    border-bottom: 2px solid transparent;
+    transition: 0.2s;
+    font-weight: 450;
+}
+
+nav a:hover {
+    border-bottom-color: #b0a898;
+    color: #1a1a1a;
+}
+
+nav a.active {
+    color: #1a1a1a;
+    border-bottom-color: #6a7a6a;
+}
+
+/* ===== 底部 ===== */
+footer {
+    margin-top: 2.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e0dcd4;
+    font-size: 0.8rem;
+    color: #b0a898;
+    text-align: center;
+}
+
+/* ===== 按钮 ===== */
+.btn {
+    padding: 0.4rem 1.2rem;
+    border: 1px solid #d0cac0;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.9rem;
+    background: #ede8e0;
+    color: #4a4a3a;
+    transition: 0.15s;
+}
+
+.btn:hover {
+    background: #e0dcd4;
+}
+
+.btn-primary {
+    background: #6a7a6a;
+    color: #f5f2ed;
+    border-color: #6a7a6a;
+}
+
+.btn-primary:hover {
+    background: #5a6a5a;
+    border-color: #5a6a5a;
+}
+
+.btn-danger {
+    background: #d4c8c0;
+    color: #6a4a3a;
+    border-color: #c8b8b0;
+}
+
+.btn-danger:hover {
+    background: #c8b8b0;
+}
+
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* ===== 表单 ===== */
+.form-group {
+    margin-bottom: 1.2rem;
+}
+
+.form-group label {
+    display: block;
+    font-weight: 500;
+    color: #4a4a3a;
+    margin-bottom: 0.3rem;
+    font-size: 0.9rem;
+}
+
+.form-group label .required {
+    color: #b08070;
+    margin-left: 0.2rem;
+}
+
+.form-group .help {
+    font-size: 0.8rem;
+    color: #b0a898;
+    margin-top: 0.15rem;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 0.6rem 0.8rem;
+    border: 1px solid #d6d0c8;
+    border-radius: 4px;
+    font-size: 0.95rem;
+    font-family: inherit;
+    background: #fcfbf9;
+    transition: border-color 0.15s;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #a8a898;
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 120px;
+    line-height: 1.8;
+}
+
+.form-group textarea.content-textarea {
+    min-height: 180px;
+    font-size: 0.95rem;
+    font-family: "Noto Serif SC", "宋体", serif;
+    line-height: 2;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+@media (max-width: 600px) {
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ===== 格律检测 ===== */
+.check-section {
+    background: #ede8e0;
+    border-radius: 4px;
+    padding: 1rem 1.2rem;
+    margin: 0.5rem 0 1.2rem 0;
+}
+
+.check-section .check-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.check-section .check-header .title {
+    font-weight: 500;
+    color: #4a4a3a;
+    font-size: 0.9rem;
+}
+
+.check-section .check-header button {
+    padding: 0.3rem 1rem;
+    background: #fcfbf9;
+    border: 1px solid #d0cac0;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.85rem;
+    color: #4a4a3a;
+}
+
+.check-section .check-header button:hover {
+    background: #f0ece4;
+}
+
+.check-result {
+    margin-top: 0.6rem;
+    padding: 0.6rem 0.8rem;
+    background: #fcfbf9;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    line-height: 1.8;
+    white-space: pre-wrap;
+    max-height: 300px;
+    overflow-y: auto;
+    display: none;
+    border: 1px solid #e0dcd4;
+}
+
+.check-result .ok {
+    color: #4a7a4a;
+}
+
+.check-result .fail {
+    color: #a07060;
+}
+
+/* ===== 平仄符号颜色 ===== */
+.ping {
+    color: #4a7a4a;
+}
+
+.ze {
+    color: #b07060;
+}
+
+.unknown {
+    color: #b0a898;
+}
+
+/* ===== 图例 ===== */
+.legend {
+    margin-top: 0.4rem;
+    font-size: 0.85rem;
+    color: #7a7a6a;
+    background: #ede8e0;
+    padding: 0.2rem 0.8rem;
+    border-radius: 4px;
+    display: inline-block;
+}
+
+/* ===== Toast 消息 ===== */
+.toast {
+    position: fixed;
+    top: 1.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #4a4a3a;
+    color: #f5f2ed;
+    padding: 0.6rem 1.5rem;
+    border-radius: 4px;
+    font-size: 0.95rem;
+    z-index: 999;
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+    max-width: 90%;
+    text-align: center;
+}
+
+.toast.show {
+    opacity: 1;
+}
+
+.toast.error {
+    background: #a07060;
+}
+
+.toast.success {
+    background: #4a7a4a;
+}
+
+/* ===== 诗词卡片 ===== */
+.poem-card .title {
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: #2c2c2c;
+    margin-bottom: 0.2rem;
+}
+
+.poem-card .excerpt {
+    font-size: 0.85rem;
+    color: #5a554a;
+    margin-top: 0.4rem;
+    padding-top: 0.4rem;
+    border-top: 1px dashed #edeae4;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ===== 详情页诗词正文 ===== */
+.poem-body {
+    font-size: 0.85rem;
+    line-height: 2.2;
+    white-space: pre-wrap;
+    padding: 0.8rem 0 1.2rem 0;
+    border-bottom: 1px solid #e0dcd4;
+    margin-bottom: 1.2rem;
+    font-family: "Noto Serif SC", "宋体", serif;
+}
+
+/* ===== 响应式 ===== */
+@media (max-width: 600px) {
+    body {
+        padding: 1rem;
+    }
+    header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    nav a {
+        margin-left: 0;
+        margin-right: 1rem;
+        font-size: 0.95rem;
+    }
+}

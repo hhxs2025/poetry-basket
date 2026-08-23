@@ -1,0 +1,7 @@
+{
+  "username": "poetry-basket",
+  "groupname": "poetry-basket",
+  "defaults": {
+    "run-as": "package"
+  }
+}

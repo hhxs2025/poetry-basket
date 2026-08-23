@@ -1,0 +1,14 @@
+appname=poetry-basket
+version=1.0.0
+display_name=诗篓
+desc="""desc=诗篓 —— 个人离线诗词工具。内置诗词库检索、平水韵格律校验、个人札记批注，数据完全本地存储，无需联网。"""
+platform=x86
+source=thirdparty
+maintainer=晦华先生
+distributor=晦华先生
+ctl_stop=true
+desktop_uidir=ui
+desktop_applaunchname=poetry-basket.Application
+service_port=5678
+checkport=true
+disable_authorization_path=false

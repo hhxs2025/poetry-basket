@@ -1,0 +1,38 @@
+[
+  {
+    "stepTitle": "阅读须知",
+    "items": [
+      {
+        "type": "tips",
+        "field": "wizard_default",
+        "label": "示例项",
+        "rules": [],
+        "options": [],
+        "helpText": "<h3>📜 诗篓 · 安装须知</h3> <p>感谢您选择使用「诗篓」—— 私人诗词工作台。</p> <br> <strong>🔒 隐私承诺</strong> <ul>   <li>所有诗词、札记、用户数据均存储在您的 NAS 本地</li>   <li>应用不会将任何数据上传至外部服务器</li>   <li>不收集任何用户隐私信息</li> </ul> <br> <strong>📋 使用说明</strong> <ul>   <li>默认管理员账号：<code>admin</code> / 密码：<code>admin123</code></li>   <li>首次登录后请立即修改管理员密码</li>   <li>数据目录：<code>/vol*/@appdata/poetry-basket/</code></li> </ul> <br> <strong>⚠️ 免责声明</strong> <ul>   <li>请自行备份重要诗词数据</li>   <li>应用仅供个人学习与交流使用</li> </ul> <br> <p style='color:#b0a898;font-size:0.9rem;'>安装即代表您已阅读并同意以上内容</p>"
+      },
+      {
+        "type": "radio",
+        "field": "wizard_agree",
+        "label": "我已阅读并同意以上条款",
+        "rules": [
+          {
+            "required": true,
+            "message": "请先阅读并同意安装须知"
+          }
+        ],
+        "options": [
+          {
+            "label": "同意",
+            "value": "true"
+          },
+          {
+            "label": "不同意",
+            "value": "false"
+          }
+        ],
+        "helpText": "请先阅读并同意安装须知",
+        "initValue": "false"
+      }
+    ]
+  }
+]

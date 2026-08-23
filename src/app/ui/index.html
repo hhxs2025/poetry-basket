@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>诗篓 · 首页</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 0.8rem;
+            margin-bottom: 1.5rem;
+        }
+        .stat-card {
+            background: #f6f4f0;
+            padding: 0.8rem 0.6rem;
+            border-radius: 4px;
+            text-align: center;
+        }
+        .stat-card .num {
+            font-size: 1.4rem;
+            font-weight: 500;
+            color: #3d3a32;
+        }
+        .stat-card .label {
+            font-size: 0.75rem;
+            color: #8a847a;
+            margin-top: 0.1rem;
+        }
+        .toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+            margin-bottom: 1.2rem;
+            align-items: center;
+        }
+        .toolbar .search-box {
+            flex: 1;
+            min-width: 160px;
+            display: flex;
+            gap: 0.4rem;
+        }
+        .toolbar .search-box input {
+            flex: 1;
+            padding: 0.4rem 0.7rem;
+            border: 1px solid #d6d0c8;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            background: white;
+            font-family: inherit;
+        }
+        .toolbar .search-box button {
+            padding: 0.4rem 1rem;
+            background: #ede8e0;
+            border: 1px solid #d6d0c8;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.9rem;
+            color: #4a4a3a;
+            white-space: nowrap;
+        }
+        .toolbar .search-box button:hover { background: #e0dcd4; }
+        .toolbar .filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+            align-items: center;
+        }
+        .toolbar .filters select {
+            padding: 0.4rem 0.6rem;
+            border: 1px solid #d6d0c8;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            background: white;
+            font-family: inherit;
+            max-width: 120px;
+        }
+        .toolbar .actions {
+            display: flex;
+            gap: 0.4rem;
+            margin-left: auto;
+        }
+        .toolbar .actions button {
+            padding: 0.4rem 1rem;
+            border: 1px solid #d6d0c8;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.9rem;
+            background: #ede8e0;
+            color: #4a4a3a;
+            white-space: nowrap;
+        }
+        .toolbar .actions button.primary {
+            background: #6a7a6a;
+            color: #f5f2ed;
+            border-color: #6a7a6a;
+        }
+        .toolbar .actions button.primary:hover { background: #5a6a5a; }
+        .toolbar .actions button:hover { background: #e0dcd4; }
+
+        .poem-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1rem;
+            margin-top: 0.5rem;
+        }
+        .poem-card {
+            background: #fcfbf9;
+            border: 1px solid #e6e2d9;
+            border-radius: 6px;
+            padding: 0.8rem 1rem 0.8rem 2.6rem;
+            position: relative;
+            cursor: pointer;
+            transition: border-color 0.15s;
+        }
+        .poem-card:hover { border-color: #c8c0b2; }
+        .poem-card input[type="checkbox"] {
+            position: absolute;
+            left: 0.8rem;
+            top: 0.9rem;
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+        .poem-card .title {
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: #2c2c2c;
+            margin-bottom: 0.2rem;
+        }
+        .poem-card .meta {
+            font-size: 0.85rem;
+            color: #8a847a;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+            margin-bottom: 0.3rem;
+        }
+        .poem-card .meta .genre {
+            background: #edeae4;
+            padding: 0 0.5rem;
+            border-radius: 3px;
+            font-size: 0.75rem;
+            color: #6b655a;
+        }
+        .poem-card .meta .owner {
+            color: #b0a898;
+            font-size: 0.75rem;
+        }
+        .poem-card .themes {
+            font-size: 0.8rem;
+            color: #8a847a;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.3rem;
+            align-items: center;
+        }
+        .poem-card .themes .theme {
+            background: #f0ede6;
+            padding: 0.05rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            color: #6b655a;
+        }
+        .poem-card .excerpt {
+            font-size: 0.85rem;
+            color: #5a554a;
+            margin-top: 0.4rem;
+            padding-top: 0.4rem;
+            border-top: 1px dashed #edeae4;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .empty-state {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 3rem 0;
+            color: #b0a898;
+        }
+        .empty-state .icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 0.4rem;
+            margin-top: 1.5rem;
+        }
+        .pagination button {
+            padding: 0.3rem 0.8rem;
+            border: 1px solid #d6d0c8;
+            border-radius: 4px;
+            background: white;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.85rem;
+        }
+        .pagination button.active {
+            background: #6a7a6a;
+            color: white;
+            border-color: #6a7a6a;
+        }
+        .pagination button:hover:not(.active) { background: #ede8e0; }
+
+        @media (max-width: 600px) {
+            .toolbar { flex-direction: column; align-items: stretch; }
+            .toolbar .actions { margin-left: 0; }
+            .toolbar .filters select { max-width: 100%; }
+            .poem-grid { grid-template-columns: 1fr; }
+            .stats { grid-template-columns: repeat(3, 1fr); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h2>📜诗篓-首页</h2>
+            <nav>
+                <a href="/" class="active">首页</a>
+                <a href="/check">格律</a>
+                <a href="/create">录诗</a>
+                <span id="adminLink" style="display:none;"><a href="/admin">管理</a></span>
+                <a href="#" onclick="logout()" style="color:#b0a898;font-size:0.85rem;">退出</a>
+            </nav>
+        </header>
+
+        <div class="stats" id="stats">
+            <div class="stat-card"><div class="num" id="statTotal">-</div><div class="label">总诗</div></div>
+            <div class="stat-card"><div class="num" id="statAuthors">-</div><div class="label">作者</div></div>
+            <div class="stat-card"><div class="num" id="statTags">-</div><div class="label">主题</div></div>
+        </div>
+
+        <div class="toolbar">
+            <div class="search-box">
+                <input type="text" id="keyword" placeholder="搜标题、作者、正文、主题…">
+                <button id="searchBtn">搜索</button>
+                <button id="clearBtn" style="display:none;background:transparent;border-color:transparent;color:#b0a898;">清空</button>
+            </div>
+            <div class="filters">
+                <select id="filterAuthor"><option value="">全部作者</option></select>
+                <select id="filterDynasty"><option value="">全部朝代</option></select>
+                <select id="filterTag"><option value="">全部主题</option></select>
+            </div>
+            <div class="actions">
+                <button id="exportSelectedBtn">导出选中</button>
+                <button class="primary" onclick="location.href='/create'">+ 录诗</button>
+            </div>
+        </div>
+
+        <div class="poem-grid" id="poemGrid">
+            <div class="empty-state"><div class="icon">📖</div><p>加载中…</p></div>
+        </div>
+
+        <div class="pagination" id="pagination" style="display:none;"></div>
+
+        <footer>诗篓-私人诗词工作台</footer>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <script>
+        var currentPage = 1;
+        var pageSize = 20;
+        var totalCount = 0;
+        var allPoems = [];
+
+        var grid = document.getElementById('poemGrid');
+        var keywordInput = document.getElementById('keyword');
+        var searchBtn = document.getElementById('searchBtn');
+        var clearBtn = document.getElementById('clearBtn');
+        var filterAuthor = document.getElementById('filterAuthor');
+        var filterDynasty = document.getElementById('filterDynasty');
+        var filterTag = document.getElementById('filterTag');
+        var pagination = document.getElementById('pagination');
+        var toast = document.getElementById('toast');
+        var toastTimer = null;
+
+        function showToast(msg, type) {
+            toast.textContent = msg;
+            toast.className = 'toast' + (type ? ' ' + type : '');
+            void toast.offsetWidth;
+            toast.classList.add('show');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(function() { toast.classList.remove('show'); }, 3000);
+        }
+
+        function logout() {
+            if (!confirm('确认退出？')) return;
+            fetch('/api/logout', { method: 'POST' })
+                .then(function(r) { return r.json(); })
+                .then(function(res) {
+                    if (res.code === 0) location.href = '/login';
+                });
+        }
+
+        function checkAdmin() {
+            fetch('/api/user')
+                .then(function(r) { return r.json(); })
+                .then(function(res) {
+                    if (res.code === 0 && res.data.admin) {
+                        var el = document.getElementById('adminLink');
+                        if (el) el.style.display = 'inline';
+                    }
+                })
+                .catch(function() {});
+        }
+
+        function loadStats() {
+            fetch('/api/stats').then(function(r) { return r.json(); }).then(function(res) {
+                if (res.code === 0) {
+                    document.getElementById('statTotal').textContent = res.data.total || 0;
+                    document.getElementById('statAuthors').textContent = res.data.authors || 0;
+                    document.getElementById('statTags').textContent = res.data.tags || 0;
+                }
+            }).catch(function() {});
+        }
+
+        function populateFilters(poems) {
+            var authors = new Set();
+            var dynasties = new Set();
+            var tags = new Set();
+            poems.forEach(function(p) {
+                if (p.author) authors.add(p.author);
+                if (p.dynasty) dynasties.add(p.dynasty);
+                if (p.tags) {
+                    p.tags.split(',').forEach(function(t) { t = t.trim(); if (t) tags.add(t); });
+                }
+            });
+            var fillSelect = function(sel, values) {
+                var existing = new Set(Array.from(sel.querySelectorAll('option:not([value=""])')).map(function(o) { return o.value; }));
+                values.forEach(function(v) {
+                    if (!existing.has(v)) {
+                        var opt = document.createElement('option');
+                        opt.value = v;
+                        opt.textContent = v;
+                        sel.appendChild(opt);
+                    }
+                });
+            };
+            fillSelect(filterAuthor, authors);
+            fillSelect(filterDynasty, dynasties);
+            fillSelect(filterTag, tags);
+        }
+
+        function loadPoems() {
+            var keyword = keywordInput.value.trim();
+            var author = filterAuthor.value;
+            var dynasty = filterDynasty.value;
+            var tag = filterTag.value;
+
+            var url = '/api/poems?';
+            var params = [];
+            if (keyword) params.push('keyword=' + encodeURIComponent(keyword));
+            if (author) params.push('author=' + encodeURIComponent(author));
+            if (dynasty) params.push('dynasty=' + encodeURIComponent(dynasty));
+            if (tag) params.push('tag=' + encodeURIComponent(tag));
+            url += params.join('&');
+
+            grid.innerHTML = '<div class="empty-state"><div class="icon">⏳</div><p>加载中…</p></div>';
+
+            fetch(url).then(function(r) { return r.json(); }).then(function(res) {
+                if (res.code !== 0) {
+                    grid.innerHTML = '<div class="empty-state"><div class="icon">⚠️</div><p>加载失败</p></div>';
+                    return;
+                }
+                allPoems = res.data || [];
+                totalCount = allPoems.length;
+                populateFilters(allPoems);
+                renderPage(1);
+                loadStats();
+            }).catch(function() {
+                grid.innerHTML = '<div class="empty-state"><div class="icon">❌</div><p>网络错误</p></div>';
+            });
+        }
+
+        function renderPage(page) {
+            currentPage = page;
+            var start = (page - 1) * pageSize;
+            var end = start + pageSize;
+            var pageData = allPoems.slice(start, end);
+
+            if (pageData.length === 0) {
+                grid.innerHTML = '<div class="empty-state"><div class="icon">📭</div><p>还没有诗，去 <a href="/create" style="color:#6a7a6a;">录一首</a></p></div>';
+                pagination.style.display = 'none';
+                return;
+            }
+
+            grid.innerHTML = pageData.map(function(p) {
+                var excerpt = p.content ? p.content.replace(/\n/g, ' ').slice(0, 60) + '…' : '';
+                var themes = p.tags ? p.tags.split(',').map(function(t) { return t.trim(); }).filter(function(t) { return t; }) : [];
+                var displayName = p.display_name || p.user_id || '未知';
+                return '<div class="poem-card" onclick="if(event.target.tagName!==\'INPUT\') location.href=\'/detail/' + p.id + '\'">' +
+                    '<input type="checkbox" class="poem-checkbox" value="' + p.id + '" onclick="event.stopPropagation();">' +
+                    '<div class="title">' + p.title + '</div>' +
+                    '<div class="meta">' +
+                    '<span>' + p.author + '</span>' +
+                    (p.dynasty ? '<span>' + p.dynasty + '</span>' : '') +
+                    '<span class="genre">' + (p.genre || '诗') + '</span>' +
+                    '<span class="owner">📌 ' + displayName + '</span>' +
+                    '<span style="font-size:0.7rem;color:#b0a898;">' + (p.created_at ? p.created_at.slice(0,10) : '') + '</span>' +
+                    '</div>' +
+                    (themes.length ? '<div class="themes"><span style="color:#b0a898;font-size:0.75rem;">主题：</span>' + themes.map(function(t) { return '<span class="theme">' + t + '</span>'; }).join('') + '</div>' : '') +
+                    (excerpt ? '<div class="excerpt">' + excerpt + '</div>' : '') +
+                    '</div>';
+            }).join('');
+
+            var totalPages = Math.ceil(totalCount / pageSize);
+            if (totalPages > 1) {
+                pagination.style.display = 'flex';
+                var html = '';
+                if (currentPage > 1) html += '<button onclick="renderPage(' + (currentPage - 1) + ')">‹</button>';
+                for (var i = 1; i <= totalPages; i++) {
+                    html += '<button class="' + (i === currentPage ? 'active' : '') + '" onclick="renderPage(' + i + ')">' + i + '</button>';
+                }
+                if (currentPage < totalPages) html += '<button onclick="renderPage(' + (currentPage + 1) + ')">›</button>';
+                pagination.innerHTML = html;
+            } else {
+                pagination.style.display = 'none';
+            }
+
+            var hasFilter = keywordInput.value.trim() || filterAuthor.value || filterDynasty.value || filterTag.value;
+            clearBtn.style.display = hasFilter ? 'inline' : 'none';
+        }
+
+        document.getElementById('exportSelectedBtn').addEventListener('click', function() {
+            var checked = document.querySelectorAll('.poem-checkbox:checked');
+            if (checked.length === 0) {
+                showToast('请至少选择一首诗', 'error');
+                return;
+            }
+            var ids = Array.from(checked).map(function(cb) { return parseInt(cb.value); });
+            this.textContent = '导出中…';
+            this.disabled = true;
+
+            fetch('/api/export/batch', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ids: ids })
+            }).then(function(r) { return r.json(); }).then(function(res) {
+                document.getElementById('exportSelectedBtn').textContent = '导出选中';
+                document.getElementById('exportSelectedBtn').disabled = false;
+                if (res.code !== 0) {
+                    showToast(res.msg || '导出失败', 'error');
+                    return;
+                }
+                var blob = new Blob([res.data.markdown], { type: 'text/markdown;charset=utf-8' });
+                var a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = '诗稿_' + new Date().toISOString().slice(0,10) + '.md';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(a.href);
+                showToast('导出 ' + res.data.count + ' 首成功', 'success');
+            }).catch(function() {
+                document.getElementById('exportSelectedBtn').textContent = '导出选中';
+                document.getElementById('exportSelectedBtn').disabled = false;
+                showToast('导出失败', 'error');
+            });
+        });
+
+        searchBtn.addEventListener('click', loadPoems);
+        keywordInput.addEventListener('keyup', function(e) { if (e.key === 'Enter') loadPoems(); });
+        clearBtn.addEventListener('click', function() {
+            keywordInput.value = '';
+            filterAuthor.value = '';
+            filterDynasty.value = '';
+            filterTag.value = '';
+            loadPoems();
+        });
+        filterAuthor.addEventListener('change', loadPoems);
+        filterDynasty.addEventListener('change', loadPoems);
+        filterTag.addEventListener('change', loadPoems);
+
+        checkAdmin();
+        loadPoems();
+    </script>
+</body>
+</html>

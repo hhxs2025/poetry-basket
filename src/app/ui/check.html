@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>诗篓 · 格律校验</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        .sub-desc {
+            color: #8a8a7a;
+            font-size: 0.9rem;
+            margin-bottom: 1.2rem;
+        }
+        .input-area textarea {
+            width: 100%;
+            padding: 0.8rem;
+            border: 1px solid #d6d0c8;
+            border-radius: 4px;
+            font-family: "Noto Serif SC", "宋体", serif;
+            font-size: 1rem;
+            background: #fcfbf9;
+            resize: vertical;
+            min-height: 160px;
+            line-height: 1.8;
+        }
+        .input-area textarea:focus {
+            outline: none;
+            border-color: #a8a898;
+        }
+
+        .toolbar-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+        .toolbar-row .spacer { flex: 1; }
+        .toolbar-row .hint {
+            font-size: 0.8rem;
+            color: #b0a898;
+        }
+
+        #resultArea {
+            display: none;
+            margin-top: 1.5rem;
+            border-top: 1px solid #e0dcd4;
+            padding-top: 1.2rem;
+        }
+
+        .result-line {
+            padding: 0.3rem 0;
+            border-bottom: 1px dashed #ece8e0;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            gap: 0.3rem 0.8rem;
+        }
+        .result-line .line-text {
+            font-size: 1.05rem;
+            font-family: "Noto Serif SC", "宋体", serif;
+        }
+        .result-line .tones {
+            color: #8a8a7a;
+            font-size: 0.85rem;
+            word-break: break-all;
+        }
+
+        .conclusion {
+            margin-top: 1rem;
+            padding: 0.8rem 1rem;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+        .conclusion.ok { background: #ece8e0; color: #4a6a4a; }
+        .conclusion.fail { background: #f0e8e0; color: #8a5a4a; }
+        .rhyme-hint {
+            color: #7a7a6a;
+            font-size: 0.9rem;
+            margin-top: 0.3rem;
+        }
+        .detail-note {
+            color: #b0a898;
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+        }
+
+        .examples {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+            margin-bottom: 0.6rem;
+        }
+        .examples button {
+            padding: 0.15rem 0.8rem;
+            border: 1px dashed #d6d0c8;
+            border-radius: 12px;
+            background: transparent;
+            cursor: pointer;
+            font-size: 0.8rem;
+            color: #8a8a7a;
+            transition: 0.15s;
+            font-family: inherit;
+        }
+        .examples button:hover {
+            border-color: #a8a898;
+            color: #4a4a3a;
+            background: #ede8e0;
+        }
+
+        .quick-actions {
+            margin-top: 1.2rem;
+            padding-top: 1rem;
+            border-top: 1px solid #e0dcd4;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.8rem;
+            align-items: center;
+        }
+        .quick-actions .label {
+            font-size: 0.9rem;
+            color: #7a7a6a;
+        }
+
+        @media (max-width: 600px) {
+            .toolbar-row { flex-direction: column; align-items: stretch; }
+            .toolbar-row .spacer { display: none; }
+            .quick-actions { flex-direction: column; align-items: stretch; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h2>📜诗篓-格律校验</h2>
+            <nav>
+                <a href="/">首页</a>
+                <a href="/check" class="active">格律</a>
+                <a href="/create">录诗</a>
+                <span id="adminLink" style="display:none;"><a href="/admin">管理</a></span>
+                <a href="#" onclick="logout()" style="color:#b0a898;font-size:0.85rem;">退出</a>
+            </nav>
+        </header>
+
+        <div class="sub-desc">按平水韵判断押韵与平仄，适合近体诗（绝句、律诗）创作与校验</div>
+
+        <div class="examples">
+            <span style="font-size:0.8rem;color:#b0a898;margin-right:0.3rem;">示例：</span>
+            <button onclick="fillExample('静夜思')">静夜思</button>
+            <button onclick="fillExample('春晓')">春晓</button>
+            <button onclick="fillExample('登鹳雀楼')">登鹳雀楼</button>
+            <button onclick="fillExample('江雪')">江雪</button>
+            <button onclick="fillExample('自拟')">自拟</button>
+        </div>
+
+        <div class="input-area">
+            <textarea id="textInput" placeholder="每行一句，如：&#10;床前明月光&#10;疑是地上霜"></textarea>
+        </div>
+
+        <div class="toolbar-row">
+            <button class="btn btn-primary" id="checkBtn">校验</button>
+            <button class="btn" id="clearBtn">清空</button>
+            <span class="spacer"></span>
+            <span class="hint">每行一句 · 偶句押韵</span>
+        </div>
+
+        <div id="resultArea">
+            <div id="checkLegend" class="legend" style="display:none;">
+                图例：<span class="ping">—</span> 平声 &nbsp;│&nbsp; <span class="ze">│</span> 仄声 &nbsp;│&nbsp; <span class="unknown">○</span> 中（未收录）
+            </div>
+            <div id="resultContent"></div>
+            <div class="quick-actions">
+                <span class="label">快速操作：</span>
+                <button class="btn" id="copyResultBtn">复制结果</button>
+                <button class="btn btn-primary" id="quickCreateBtn">录入诗库</button>
+            </div>
+        </div>
+
+        <footer>诗篓-私人诗词工作台</footer>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <script>
+        var toast = document.getElementById('toast');
+        var toastTimer = null;
+
+        function showToast(msg, type) {
+            toast.textContent = msg;
+            toast.className = 'toast' + (type ? ' ' + type : '');
+            void toast.offsetWidth;
+            toast.classList.add('show');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(function() { toast.classList.remove('show'); }, 3000);
+        }
+
+        function logout() {
+            if (!confirm('确认退出？')) return;
+            fetch('/api/logout', { method: 'POST' })
+                .then(function(r) { return r.json(); })
+                .then(function(res) {
+                    if (res.code === 0) location.href = '/login';
+                });
+        }
+
+        function checkAdmin() {
+            fetch('/api/user')
+                .then(function(r) { return r.json(); })
+                .then(function(res) {
+                    if (res.code === 0 && res.data.admin) {
+                        var el = document.getElementById('adminLink');
+                        if (el) el.style.display = 'inline';
+                    }
+                })
+                .catch(function() {});
+        }
+
+        var textInput = document.getElementById('textInput');
+        var checkBtn = document.getElementById('checkBtn');
+        var clearBtn = document.getElementById('clearBtn');
+        var resultArea = document.getElementById('resultArea');
+        var resultContent = document.getElementById('resultContent');
+        var checkLegend = document.getElementById('checkLegend');
+        var copyResultBtn = document.getElementById('copyResultBtn');
+        var quickCreateBtn = document.getElementById('quickCreateBtn');
+
+        var lastResult = null;
+        var lastText = '';
+
+        var EXAMPLES = {
+            '静夜思': '床前明月光\n疑是地上霜\n举头望明月\n低头思故乡',
+            '春晓': '春眠不觉晓\n处处闻啼鸟\n夜来风雨声\n花落知多少',
+            '登鹳雀楼': '白日依山尽\n黄河入海流\n欲穷千里目\n更上一层楼',
+            '江雪': '千山鸟飞绝\n万径人踪灭\n孤舟蓑笠翁\n独钓寒江雪',
+            '自拟': '落日照大旗\n风劲角弓鸣\n草枯鹰眼疾\n雪尽马蹄轻'
+        };
+
+        window.fillExample = function(name) {
+            var text = EXAMPLES[name];
+            if (text) {
+                textInput.value = text;
+                checkBtn.click();
+            }
+        };
+
+        function doCheck() {
+            var text = textInput.value.trim();
+            if (!text) {
+                showToast('请输入诗句', 'error');
+                return;
+            }
+
+            checkBtn.textContent = '校验中…';
+            checkBtn.disabled = true;
+
+            fetch('/api/check', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: text })
+            }).then(function(r) { return r.json(); }).then(function(res) {
+                checkBtn.textContent = '校验';
+                checkBtn.disabled = false;
+
+                if (res.code !== 0 || res.data.error) {
+                    resultArea.style.display = 'block';
+                    resultContent.innerHTML = '<div style="color:#b07060;">' + (res.data && res.data.error ? res.data.error : '校验失败') + '</div>';
+                    lastResult = null;
+                    return;
+                }
+
+                lastResult = res.data;
+                lastText = text;
+                renderResult(res.data);
+            }).catch(function() {
+                checkBtn.textContent = '校验';
+                checkBtn.disabled = false;
+                showToast('请求失败', 'error');
+            });
+        }
+
+        function renderResult(d) {
+            var html = '';
+            var toneMap = { '平': '—', '仄': '│', '？': '○' };
+
+            d.lines.forEach(function(line) {
+                var toneHtml = line.chars.map(function(ch) {
+                    var cls = ch.tone === '平' ? 'ping' : ch.tone === '仄' ? 'ze' : 'unknown';
+                    return '<span class="' + cls + '">' + ch.char + (toneMap[ch.tone] || ch.tone) + '</span>';
+                }).join(' ');
+
+                html += '<div class="result-line">' +
+                    '<span class="line-text">' + line.line + '</span>' +
+                    '<span class="tones">' +
+                    '【' + line.length + '字】' + toneHtml +
+                    (line.is_even ? ' ⬅️偶句' : '') +
+                    '<span style="color:#b0a898;font-size:0.8rem;">' +
+                    (line.last_rhyme !== '未知' ? ' 末字：' + line.last_char + '(' + line.last_tone + ', ' + line.last_rhyme + ')' : '') +
+                    '</span>' +
+                    '</span></div>';
+            });
+
+            var cls = d.rhyme_ok ? 'ok' : 'fail';
+            html += '<div class="conclusion ' + cls + '">' + d.conclusion + '</div>';
+            html += '<div class="rhyme-hint">首句韵部：' + (d.first_rhyme || '未识别') + '</div>';
+            html += '<div class="detail-note">* 按平水韵粗略判断，近体诗一般押平声韵</div>';
+
+            resultContent.innerHTML = html;
+            resultArea.style.display = 'block';
+            checkLegend.style.display = 'inline-block';
+        }
+
+        copyResultBtn.addEventListener('click', function() {
+            if (!lastResult) {
+                showToast('请先进行校验', 'error');
+                return;
+            }
+            var text = '=== 诗篓 · 格律校验结果 ===\n\n';
+            text += '输入：\n' + lastText + '\n\n';
+            text += '逐句平仄：\n';
+            var toneMap = { '平': '—', '仄': '│', '？': '○' };
+            lastResult.lines.forEach(function(line) {
+                var toneStr = line.chars.map(function(ch) {
+                    return ch.char + '(' + (toneMap[ch.tone] || ch.tone) + ')';
+                }).join('');
+                text += '  ' + line.line + '\n  ' + toneStr + '\n';
+            });
+            text += '\n' + lastResult.conclusion;
+            if (lastResult.first_rhyme) {
+                text += '\n首句韵部：' + lastResult.first_rhyme;
+            }
+
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(text).then(function() {
+                    showToast('已复制到剪贴板', 'success');
+                }).catch(function() {
+                    fallbackCopy(text);
+                });
+            } else {
+                fallbackCopy(text);
+            }
+        });
+
+        function fallbackCopy(text) {
+            var ta = document.createElement('textarea');
+            ta.value = text;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            showToast('已复制到剪贴板', 'success');
+        }
+
+        quickCreateBtn.addEventListener('click', function() {
+            if (!lastText) {
+                showToast('请先校验诗句', 'error');
+                return;
+            }
+            var encoded = encodeURIComponent(lastText);
+            location.href = '/create?content=' + encoded;
+        });
+
+        clearBtn.addEventListener('click', function() {
+            textInput.value = '';
+            resultArea.style.display = 'none';
+            lastResult = null;
+            lastText = '';
+            checkLegend.style.display = 'none';
+        });
+
+        checkBtn.addEventListener('click', doCheck);
+
+        textInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                e.preventDefault();
+                doCheck();
+            }
+        });
+
+        (function() {
+            var params = new URLSearchParams(window.location.search);
+            var content = params.get('content');
+            if (content) {
+                textInput.value = decodeURIComponent(content);
+                setTimeout(function() { doCheck(); }, 300);
+            }
+        })();
+
+        checkAdmin();
+    </script>
+</body>
+</html>

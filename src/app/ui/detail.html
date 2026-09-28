@@ -17,6 +17,7 @@
             font-size: 1.2rem;
             letter-spacing: 2px;
             margin-bottom: 0.2rem;
+            text-align: center;
         }
         .poem-header .meta {
             display: flex;
@@ -24,6 +25,8 @@
             gap: 0.6rem 1.2rem;
             color: #8a847a;
             font-size: 0.9rem;
+            align-items: center;
+            justify-content: center;
         }
         .poem-header .meta .genre-badge {
             background: #edeae4;
@@ -35,15 +38,6 @@
         .poem-header .meta .owner {
             color: #b0a898;
             font-size: 0.85rem;
-        }
-        .poem-body {
-            font-size: 0.85rem;
-            line-height: 2.2;
-            white-space: pre-wrap;
-            padding: 0.8rem 0 1.2rem 0;
-            border-bottom: 1px solid #e0dcd4;
-            margin-bottom: 1.2rem;
-            font-family: "Noto Serif SC", "宋体", serif;
         }
         .section-block { margin-bottom: 1.2rem; }
         .section-block .section-title {
@@ -134,7 +128,7 @@
 
         <div id="detailArea"><div class="loading">加载中…</div></div>
 
-        <footer>诗篓-私人诗词工作台</footer>
+        <footer>诗篓-个人诗词工作台</footer>
     </div>
 
     <div id="toast" class="toast"></div>
@@ -144,6 +138,13 @@
         var toastTimer = null;
         var currentUser = '';
         var isAdmin = false;
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            var div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
 
         function showToast(msg, type) {
             toast.textContent = msg;
@@ -207,27 +208,30 @@
             var hasAppreciation = p.appreciation && p.appreciation.trim();
             var displayName = p.display_name || p.user_id || '未知';
             var editable = canEdit(p.user_id);
+            var poemType = p.type || '收录';
+            var typeClass = poemType === '原创' ? 'type-original' : 'type-collect';
 
-            var html = '<div class="poem-header"><h2>' + p.title + '</h2>' +
+            var html = '<div class="poem-header"><h2>' + escapeHtml(p.title) + '</h2>' +
                 '<div class="meta">' +
-                '<span>' + p.author + '</span>' +
-                (p.dynasty ? '<span>' + p.dynasty + '</span>' : '') +
-                '<span class="genre-badge">' + (p.genre || '诗') + '</span>' +
+                '<span>' + escapeHtml(p.author) + '</span>' +
+                (p.dynasty ? '<span>' + escapeHtml(p.dynasty) + '</span>' : '') +
+                '<span class="genre-badge">' + escapeHtml(p.genre || '诗') + '</span>' +
+                '<span class="type-badge ' + typeClass + '">' + poemType + '</span>' +
                 '<span class="owner">📌 录入人：' + displayName + '</span>' +
                 '<span style="font-size:0.8rem;color:#b0a898;">录入于 ' + (p.created_at ? p.created_at.slice(0,10) : '') + '</span>' +
                 '</div></div>' +
-                '<div class="poem-body">' + p.content + '</div>';
+                '<div class="poem-body">' + (p.content || '') + '</div>';
 
             if (hasAnnotation) {
-                html += '<div class="section-block"><div class="section-title">笺注</div><div class="section-content">' + p.annotation + '</div></div>';
+                html += '<div class="section-block"><div class="section-title">笺注</div><div class="section-content">' + escapeHtml(p.annotation) + '</div></div>';
             }
 
             if (hasAppreciation) {
-                html += '<div class="section-block"><div class="section-title">赏析</div><div class="section-content">' + p.appreciation + '</div></div>';
+                html += '<div class="section-block"><div class="section-title">赏析</div><div class="section-content">' + escapeHtml(p.appreciation) + '</div></div>';
             }
 
             if (themes.length) {
-                html += '<div class="section-block"><div class="section-title">主题</div><div class="themes-display">' + themes.map(function(t) { return '<span class="theme">' + t + '</span>'; }).join('') + '</div></div>';
+                html += '<div class="section-block"><div class="section-title">主题</div><div class="themes-display">' + themes.map(function(t) { return '<span class="theme">' + escapeHtml(t) + '</span>'; }).join('') + '</div></div>';
             }
 
             html += '<div class="action-bar">';

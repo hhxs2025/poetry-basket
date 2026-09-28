@@ -179,6 +179,45 @@ footer {
     }
 }
 
+/* ===== 编辑器工具栏 ===== */
+.editor-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 0.4rem;
+}
+
+.tool-btn {
+    display: inline-block;
+    padding: 0.3rem 0.8rem;
+    border: 1px solid #d0cac0;
+    border-radius: 4px;
+    background: #ede8e0;
+    color: #4a4a3a;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-family: inherit;
+    transition: 0.15s;
+}
+
+.tool-btn:hover {
+    background: #e0dcd4;
+}
+
+.tool-hint {
+    font-size: 0.75rem;
+    color: #b0a898;
+}
+
+.tool-hint code {
+    background: #ede8e0;
+    padding: 0 0.3rem;
+    border-radius: 2px;
+    font-family: monospace;
+    color: #6a4a3a;
+}
+
 /* ===== 格律检测 ===== */
 .check-section {
     background: #ede8e0;
@@ -312,15 +351,237 @@ footer {
     text-overflow: ellipsis;
 }
 
-/* ===== 详情页诗词正文 ===== */
+/* ===== 详情页诗词正文（HTML 渲染） ===== */
 .poem-body {
-    font-size: 0.85rem;
-    line-height: 2.2;
-    white-space: pre-wrap;
+    font-size: 0.95rem;
+    line-height: 1.8;
     padding: 0.8rem 0 1.2rem 0;
     border-bottom: 1px solid #e0dcd4;
     margin-bottom: 1.2rem;
     font-family: "Noto Serif SC", "宋体", serif;
+    white-space: pre-wrap;   /* 让 div 内直接回车也保留换行 */
+}
+
+.poem-body p {
+    margin: 0;
+    white-space: pre-wrap;
+}
+
+.poem-body h1,
+.poem-body h2,
+.poem-body h3 {
+    font-weight: 400;
+    margin: 0.8rem 0 0.6rem 0;
+    letter-spacing: 2px;
+    color: #3a3a3a;
+}
+
+.poem-body h1 { font-size: 1.1rem; }
+.poem-body h2 { font-size: 1rem; }
+.poem-body h3 { font-size: 0.95rem; }
+
+.poem-body strong {
+    font-weight: 600;
+    color: #2c2c2c;
+}
+
+.poem-body em {
+    font-style: italic;
+    color: #5a554a;
+}
+
+.poem-body blockquote {
+    border-left: 3px solid #d0cac0;
+    padding: 0.4rem 1rem;
+    margin: 0.6rem 0;
+    background: #f6f4f0;
+    color: #5a554a;
+    font-size: 0.9rem;
+}
+
+.poem-body code {
+    background: #ede8e0;
+    padding: 0.1rem 0.4rem;
+    border-radius: 3px;
+    font-family: monospace;
+    font-size: 0.85rem;
+    color: #6a4a3a;
+}
+
+.poem-body pre {
+    background: #f0ece4;
+    padding: 0.8rem 1rem;
+    border-radius: 4px;
+    overflow-x: auto;
+    margin: 0.6rem 0;
+}
+
+.poem-body pre code {
+    background: transparent;
+    padding: 0;
+}
+
+.poem-body ul,
+.poem-body ol {
+    margin: 0.4rem 0 0.4rem 1.5rem;
+}
+
+.poem-body li {
+    margin: 0.15rem 0;
+}
+
+.poem-body hr {
+    border: none;
+    border-top: 1px solid #e0dcd4;
+    margin: 1rem 0;
+}
+
+/* 图片：默认最大 70% 宽居中，可用 style="width:300px" 覆盖 */
+.poem-body .md-image,
+.poem-body img {
+    max-width: 70%;
+    max-height: 400px;
+    height: auto;
+    display: block;
+    margin: 1rem auto;
+    border-radius: 4px;
+    border: 1px solid #e0dcd4;
+}
+
+/* 链接 */
+.poem-body a {
+    color: #5a7a5a;
+    text-decoration: underline;
+    text-decoration-color: #c0c8c0;
+    text-underline-offset: 3px;
+}
+
+.poem-body a:hover {
+    color: #3a5a3a;
+    text-decoration-color: #5a7a5a;
+}
+
+/* 表格 */
+.poem-body table {
+    border-collapse: collapse;
+    margin: 0.8rem auto;
+    font-size: 0.85rem;
+}
+
+.poem-body th,
+.poem-body td {
+    border: 1px solid #d6d0c8;
+    padding: 0.3rem 0.8rem;
+    text-align: left;
+}
+
+.poem-body th {
+    background: #f0ece4;
+    font-weight: 500;
+}
+
+/* ===== 类型标签 ===== */
+.type-badge {
+    display: inline-block;
+    padding: 0.05rem 0.5rem;
+    border-radius: 3px;
+    font-size: 0.7rem;
+    letter-spacing: 1px;
+}
+
+.type-badge.type-collect {
+    background: #edeae4;
+    color: #6b655a;
+}
+
+.type-badge.type-original {
+    background: #d8e4d8;
+    color: #4a6a4a;
+}
+
+/* ===== 图文标识 ===== */
+.img-badge {
+    display: inline-block;
+    font-size: 0.7rem;
+    color: #7a8a7a;
+    background: #e8f0e8;
+    padding: 0.05rem 0.4rem;
+    border-radius: 3px;
+    margin-left: 0.3rem;
+}
+
+/* ===== HTML 格式示例区块 ===== */
+.md-guide {
+    margin-top: 2rem;
+    padding: 1.2rem 1.4rem;
+    background: #f6f4f0;
+    border-radius: 4px;
+    border: 1px solid #e0dcd4;
+}
+
+.md-guide h3 {
+    font-weight: 500;
+    font-size: 1rem;
+    color: #4a4a3a;
+    margin-bottom: 0.8rem;
+    letter-spacing: 1px;
+    border-bottom: 1px solid #e0dcd4;
+    padding-bottom: 0.4rem;
+}
+
+.md-guide-block {
+    margin-bottom: 1.2rem;
+}
+
+.md-guide-block:last-child {
+    margin-bottom: 0;
+}
+
+.md-guide-block h4 {
+    font-weight: 500;
+    font-size: 0.9rem;
+    color: #5a554a;
+    margin-bottom: 0.3rem;
+}
+
+.md-guide-block p {
+    font-size: 0.85rem;
+    color: #5a554a;
+    margin: 0.2rem 0;
+}
+
+.md-guide-block pre {
+    background: #fcfbf9;
+    border: 1px solid #e0dcd4;
+    border-radius: 4px;
+    padding: 0.6rem 0.9rem;
+    margin: 0.4rem 0;
+    font-family: "Noto Serif SC", "宋体", serif;
+    font-size: 0.85rem;
+    line-height: 1.9;
+    color: #3a3a3a;
+    white-space: pre-wrap;
+    overflow-x: auto;
+}
+
+.md-guide-block code {
+    background: #ede8e0;
+    padding: 0.05rem 0.4rem;
+    border-radius: 3px;
+    font-family: monospace;
+    font-size: 0.8rem;
+    color: #6a4a3a;
+}
+
+.md-guide-block pre code {
+    background: transparent;
+    padding: 0;
+}
+
+.md-guide-note {
+    font-size: 0.8rem;
+    color: #b0a898;
+    margin-top: 0.3rem;
 }
 
 /* ===== 响应式 ===== */
@@ -337,5 +598,13 @@ footer {
         margin-left: 0;
         margin-right: 1rem;
         font-size: 0.95rem;
+    }
+    .md-guide {
+        padding: 1rem;
+    }
+    .poem-body .md-image,
+    .poem-body img {
+        max-width: 90%;
+        max-height: 300px;
     }
 }

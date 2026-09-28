@@ -60,9 +60,13 @@ start_process() {
     export TRIM_GROUPNAME="${TRIM_GROUPNAME}"
     export PYTHONPATH="${APP_CODE_DIR}/vendor:${PYTHONPATH:-}"
 
+    # ----- 共享目录（用于图片存储）-----
+    export TRIM_DATA_SHARE_PATH="${TRIM_DATA_SHARE_PATH:-}"
+
     log_msg "代码目录: ${APP_CODE_DIR}"
     log_msg "监听端口: ${TRIM_SERVICE_PORT}"
     log_msg "数据目录: ${TRIM_PKGVAR}"
+    log_msg "共享目录: ${TRIM_DATA_SHARE_PATH}"
     log_msg "启动命令: python3 ${APP_ENTRY}"
 
     python3 "${APP_ENTRY}" >> "$LOG_FILE" 2>&1 &

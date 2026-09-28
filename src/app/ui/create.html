@@ -22,7 +22,7 @@
         <form id="poemForm">
             <div class="form-group">
                 <label>题目 <span class="required">*</span></label>
-                <input type="text" id="title" placeholder="如：静夜思" required>
+                <input type="text" id="title" placeholder="如：静夜思（纯文字）" required>
             </div>
 
             <div class="form-row">
@@ -36,25 +36,39 @@
                 </div>
             </div>
 
-            <div class="form-group">
-                <label>体裁</label>
-                <select id="genre">
-                    <option value="五绝">五绝</option>
-                    <option value="七绝">七绝</option>
-                    <option value="古绝">古绝</option>
-                    <option value="五律">五律</option>
-                    <option value="七律">七律</option>
-                    <option value="排律">排律</option>
-                    <option value="古风">古风</option>
-                    <option value="词">词</option>
-                    <option value="其他">其他</option>
-                </select>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>体裁</label>
+                    <select id="genre">
+                        <option value="五绝">五绝</option>
+                        <option value="七绝">七绝</option>
+                        <option value="古绝">古绝</option>
+                        <option value="五律">五律</option>
+                        <option value="七律">七律</option>
+                        <option value="排律">排律</option>
+                        <option value="古风">古风</option>
+                        <option value="词">词</option>
+                        <option value="其他">其他</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>类型</label>
+                    <select id="type">
+                        <option value="收录">收录</option>
+                        <option value="原创">原创</option>
+                    </select>
+                    <div class="help">收录：他人作品；原创：自己创作</div>
+                </div>
             </div>
 
             <div class="form-group">
                 <label>正文 <span class="required">*</span></label>
-                <textarea id="content" class="content-textarea" placeholder="每行一句，如：&#10;床前明月光&#10;疑是地上霜" required></textarea>
-                <div class="help">每行一句，换行分隔</div>
+                <div class="editor-toolbar">
+                    <label class="tool-btn" for="imageInput">📷 插入图片</label>
+                    <input type="file" id="imageInput" accept="image/jpeg,image/png,image/webp,image/gif" style="display:none;">
+                    <span class="tool-hint">上传后自动插入到光标处，也可手动写 <code>&lt;img src="..."&gt;</code></span>
+                </div>
+                <textarea id="content" class="content-textarea" placeholder="使用 HTML 排版，如：&#10;&lt;div style=&quot;text-align:center&quot;&gt;&#10;床前明月光，疑是地上霜。&#10;&lt;/div&gt;" required></textarea>
             </div>
 
             <div class="check-section">
@@ -66,7 +80,7 @@
                     图例：<span class="ping">—</span> 平声 &nbsp;│&nbsp; <span class="ze">│</span> 仄声 &nbsp;│&nbsp; <span class="unknown">○</span> 中（未收录）
                 </div>
                 <div id="checkResult" class="check-result"></div>
-                <div class="help" style="margin-top:0.3rem;">按平水韵粗略判断押韵与平仄，仅供参考</div>
+                <div class="help" style="margin-top:0.3rem;">按平水韵粗略判断押韵与平仄，仅供参考（检测时忽略 HTML 标签）</div>
             </div>
 
             <div class="form-group">
@@ -91,7 +105,75 @@
             </div>
         </form>
 
-        <footer>诗篓-私人诗词工作台</footer>
+        <!-- 正文排版说明 -->
+        <section class="md-guide">
+            <h3>正文排版说明（HTML）</h3>
+
+            <div class="md-guide-block">
+                <h4>一、居中</h4>
+                <p>诗居中显示。</p>
+                <pre>&lt;div style="text-align:center"&gt;
+
+空山新雨后，天气晚来秋。
+明月松间照，清泉石上流。
+
+&lt;/div&gt;</pre>
+            </div>
+
+            <div class="md-guide-block">
+                <h4>二、左对齐</h4>
+                <p>词、古风一般左对齐。</p>
+                <pre>&lt;div style="text-align:left"&gt;
+
+大江东去，浪淘尽，千古风流人物。
+
+&lt;/div&gt;</pre>
+            </div>
+
+            <div class="md-guide-block">
+                <h4>三、右对齐</h4>
+                <pre>&lt;div style="text-align:right"&gt;
+落款文字
+&lt;/div&gt;</pre>
+            </div>
+
+            <div class="md-guide-block">
+                <h4>四、诗句换行</h4>
+                <p>直接回车换行，不要空行。不同段落之间可以空一行。</p>
+                <pre>空山新雨后，天气晚来秋。
+明月松间照，清泉石上流。</pre>
+            </div>
+
+            <div class="md-guide-block">
+                <h4>五、强调</h4>
+                <pre>&lt;strong&gt;加粗文字&lt;/strong&gt;
+&lt;em&gt;斜体文字&lt;/em&gt;
+&lt;span style="color:#a07060;"&gt;彩色文字&lt;/span&gt;</pre>
+            </div>
+
+            <div class="md-guide-block">
+                <h4>六、引用批语</h4>
+                <p>用于写评语、出处，会显示为带左侧竖线的引用块。</p>
+                <pre>&lt;blockquote&gt;王维此诗，诗中有画，画中有诗。&lt;/blockquote&gt;</pre>
+            </div>
+
+            <div class="md-guide-block">
+                <h4>七、插入图片</h4>
+                <p>点击上方「📷 插入图片」按钮上传，系统会自动插入；也可手动写外链图片。</p>
+                <pre>&lt;img src="/uploads/xxx.jpg" class="md-image"&gt;
+&lt;img src="https://example.com/pic.jpg" class="md-image"&gt;</pre>
+                <p>可指定宽度：</p>
+                <pre>&lt;img src="/uploads/xxx.jpg" class="md-image" style="width:300px"&gt;
+&lt;img src="/uploads/xxx.jpg" class="md-image" style="width:50%"&gt;</pre>
+            </div>
+
+            <div class="md-guide-block">
+                <h4>八、分割线</h4>
+                <pre>&lt;hr&gt;</pre>
+            </div>
+        </section>
+
+        <footer>诗篓-个人诗词工作台</footer>
     </div>
 
     <div id="toast" class="toast"></div>
@@ -130,13 +212,74 @@
                 .catch(function() {});
         }
 
+        // ============================================================
+        // 插入图片（HTML img 标签）
+        // ============================================================
+        var imageInput = document.getElementById('imageInput');
+        var contentTextarea = document.getElementById('content');
+
+        function insertAtCursor(ta, text) {
+            var start = ta.selectionStart;
+            var end = ta.selectionEnd;
+            var before = ta.value.substring(0, start);
+            var after = ta.value.substring(end);
+            ta.value = before + text + after;
+            var newPos = start + text.length;
+            ta.focus();
+            ta.setSelectionRange(newPos, newPos);
+        }
+
+        imageInput.addEventListener('change', function() {
+            var file = imageInput.files[0];
+            if (!file) return;
+
+            if (file.size > 5 * 1024 * 1024) {
+                showToast('图片不能超过 5MB', 'error');
+                imageInput.value = '';
+                return;
+            }
+
+            var formData = new FormData();
+            formData.append('file', file);
+
+            imageInput.disabled = true;
+
+            fetch('/api/upload', { method: 'POST', body: formData })
+                .then(function(r) { return r.json(); })
+                .then(function(res) {
+                    imageInput.disabled = false;
+                    imageInput.value = '';
+                    if (res.code !== 0) {
+                        showToast(res.msg || '上传失败', 'error');
+                        return;
+                    }
+                    var tag = '<img src="/uploads/' + res.filename + '" class="md-image">';
+                    insertAtCursor(contentTextarea, '\n' + tag + '\n');
+                    showToast('图片已插入', 'success');
+                })
+                .catch(function() {
+                    imageInput.disabled = false;
+                    imageInput.value = '';
+                    showToast('上传失败，请重试', 'error');
+                });
+        });
+
+        // ============================================================
+        // 格律检测（先剥离 HTML 标签）
+        // ============================================================
         var checkBtn = document.getElementById('checkBtn');
         var checkResult = document.getElementById('checkResult');
         var checkLegend = document.getElementById('checkLegend');
-        var contentTextarea = document.getElementById('content');
+
+        function stripHtml(html) {
+            var tmp = document.createElement('div');
+            tmp.innerHTML = html;
+            return (tmp.textContent || tmp.innerText || '').trim();
+        }
 
         checkBtn.addEventListener('click', function() {
-            var text = contentTextarea.value.trim();
+            var raw = contentTextarea.value.trim();
+            var text = stripHtml(raw);
             if (!text) {
                 showToast('请先输入正文内容', 'error');
                 return;
@@ -190,6 +333,9 @@
             });
         });
 
+        // ============================================================
+        // 表单提交
+        // ============================================================
         var form = document.getElementById('poemForm');
         var submitBtn = document.getElementById('submitBtn');
 
@@ -201,6 +347,7 @@
                 author: document.getElementById('author').value.trim(),
                 dynasty: document.getElementById('dynasty').value.trim(),
                 genre: document.getElementById('genre').value,
+                type: document.getElementById('type').value,
                 content: document.getElementById('content').value.trim(),
                 annotation: document.getElementById('annotation').value.trim(),
                 appreciation: document.getElementById('appreciation').value.trim(),

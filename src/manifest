@@ -1,7 +1,7 @@
 appname=poetry-basket
-version=1.1.0
+version=1.2.0
 display_name=诗篓
-desc="""诗篓 是一款专为古典诗词爱好者设计的个人诗词管理工具。它既是一个私人诗库，也是一个创作辅助工具，帮助您录诗、整理、品评、校验格律，所有数据存储在您自己的 NAS 上，完全离线、完全私密。"""
+desc="""<p>诗篓 是一款专为古典诗词爱好者设计的个人诗词管理工具。它既是一个私人诗库，也是一个创作辅助工具，帮助您录诗、整理、品评、校验格律，所有数据存储在您自己的 NAS 上，完全离线、完全私密。</p><p><b>1.2.0更新要点</b>:</p><p><b>1.诗文编辑:</b>正文改用 HTML 排版，支持居中/左对齐/右对齐（<code>&lt;div style="text-align:center"&gt;</code>）、加粗（<code>&lt;strong&gt;</code>）、斜体（<code>&lt;em&gt;</code>）、引用（<code>&lt;blockquote&gt;</code>）、分割线（<code>&lt;hr&gt;</code>）；<br><b>2.作品类型:</b>新增"收录/原创"字段，支持筛选与标签显示；<br><b>3.配图功能:</b>点击"插入图片"上传后自动插入正文光标处，支持内链(上传位置在"应用文件"下poetry-basket/uploads里)和外链，可指定宽度（<code>style="width:300px"</code>）；<br><b>4.正文对齐:</b>取消自动居中，完全由用户在正文中自行控制；<br><b>5.导出优化:</b>导出时自动剥离 HTML 标签，输出纯文本，保留段落换行；</p>"""
 platform=x86
 source=thirdparty
 maintainer=晦华先生
@@ -13,3 +13,4 @@ desktop_applaunchname=poetry-basket.Application
 service_port=5678
 checkport=true
 disable_authorization_path=false
+checksum=35bbc9abc2b0eaadfbb193c4efdb38d3

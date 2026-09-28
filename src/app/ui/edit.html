@@ -23,7 +23,7 @@
             <div style="text-align:center;padding:3rem 0;color:#b0a898;">加载中…</div>
         </div>
 
-        <footer>诗篓-私人诗词工作台</footer>
+        <footer>诗篓-个人诗词工作台</footer>
     </div>
 
     <div id="toast" class="toast"></div>
@@ -77,6 +77,11 @@
             return div.innerHTML;
         }
 
+        function escapeAttr(str) {
+            if (!str) return '';
+            return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
         var pathParts = window.location.pathname.split('/');
         var poemId = pathParts[pathParts.length - 1];
         var formArea = document.getElementById('formArea');
@@ -91,7 +96,6 @@
                     formArea.innerHTML = '<div style="text-align:center;padding:3rem 0;color:#b0a898;">加载失败</div>';
                     return;
                 }
-                // 权限检查
                 if (!canEdit(res.data.user_id)) {
                     formArea.innerHTML = '<div style="text-align:center;padding:3rem 0;color:#b0a898;">你无权编辑这首诗</div>';
                     return;
@@ -104,13 +108,15 @@
 
         function renderForm(p) {
             var tagsValue = p.tags || '';
+            var poemType = p.type || '收录';
 
             var html = '<form id="poemForm">' +
-                '<div class="form-group"><label>题目 <span class="required">*</span></label><input type="text" id="title" value="' + escapeHtml(p.title) + '" required></div>' +
+                '<div class="form-group"><label>题目 <span class="required">*</span></label><input type="text" id="title" value="' + escapeAttr(p.title) + '" required></div>' +
                 '<div class="form-row">' +
-                '<div class="form-group"><label>作者 <span class="required">*</span></label><input type="text" id="author" value="' + escapeHtml(p.author) + '" required></div>' +
-                '<div class="form-group"><label>朝代</label><input type="text" id="dynasty" value="' + escapeHtml(p.dynasty || '') + '"></div>' +
+                '<div class="form-group"><label>作者 <span class="required">*</span></label><input type="text" id="author" value="' + escapeAttr(p.author) + '" required></div>' +
+                '<div class="form-group"><label>朝代</label><input type="text" id="dynasty" value="' + escapeAttr(p.dynasty || '') + '"></div>' +
                 '</div>' +
+                '<div class="form-row">' +
                 '<div class="form-group"><label>体裁</label><select id="genre">' +
                 '<option value="五绝" ' + (p.genre === '五绝' ? 'selected' : '') + '>五绝</option>' +
                 '<option value="七绝" ' + (p.genre === '七绝' ? 'selected' : '') + '>七绝</option>' +
@@ -122,20 +128,43 @@
                 '<option value="词" ' + (p.genre === '词' ? 'selected' : '') + '>词</option>' +
                 '<option value="其他" ' + (p.genre === '其他' ? 'selected' : '') + '>其他</option>' +
                 '</select></div>' +
-                '<div class="form-group"><label>正文 <span class="required">*</span></label><textarea id="content" class="content-textarea" required>' + escapeHtml(p.content) + '</textarea><div class="help">每行一句，换行分隔</div></div>' +
+                '<div class="form-group"><label>类型</label><select id="type">' +
+                '<option value="收录" ' + (poemType === '收录' ? 'selected' : '') + '>收录</option>' +
+                '<option value="原创" ' + (poemType === '原创' ? 'selected' : '') + '>原创</option>' +
+                '</select><div class="help">收录：他人作品；原创：自己创作</div></div>' +
+                '</div>' +
+                '<div class="form-group"><label>正文 <span class="required">*</span></label>' +
+                '<div class="editor-toolbar">' +
+                '<label class="tool-btn" for="imageInput">📷 插入图片</label>' +
+                '<input type="file" id="imageInput" accept="image/jpeg,image/png,image/webp,image/gif" style="display:none;">' +
+                '<span class="tool-hint">上传后自动插入到光标处，也可手动写 <code>&lt;img src="..."&gt;</code></span>' +
+                '</div>' +
+                '<textarea id="content" class="content-textarea" required>' + escapeHtml(p.content) + '</textarea>' +
+                '</div>' +
                 '<div class="check-section">' +
                 '<div class="check-header"><span class="title">格律速检</span><button type="button" id="checkBtn">检测当前正文</button></div>' +
                 '<div id="checkLegend" class="legend" style="display:none;">图例：<span class="ping">—</span> 平声 &nbsp;│&nbsp; <span class="ze">│</span> 仄声 &nbsp;│&nbsp; <span class="unknown">○</span> 中（未收录）</div>' +
                 '<div id="checkResult" class="check-result"></div>' +
-                '<div class="help" style="margin-top:0.3rem;">按平水韵粗略判断押韵与平仄，仅供参考</div>' +
+                '<div class="help" style="margin-top:0.3rem;">按平水韵粗略判断押韵与平仄，仅供参考（检测时忽略 HTML 标签）</div>' +
                 '</div>' +
                 '<div class="form-group"><label>笺注</label><textarea id="annotation" style="min-height:80px;">' + escapeHtml(p.annotation || '') + '</textarea></div>' +
                 '<div class="form-group"><label>赏析</label><textarea id="appreciation" style="min-height:80px;">' + escapeHtml(p.appreciation || '') + '</textarea></div>' +
-                '<div class="form-group"><label>主题</label><input type="text" id="tags" value="' + escapeHtml(tagsValue) + '" placeholder="如：思乡, 写景, 哲理（用英文逗号分隔）"><div class="help">多个主题用英文逗号分隔</div></div>' +
+                '<div class="form-group"><label>主题</label><input type="text" id="tags" value="' + escapeAttr(tagsValue) + '" placeholder="如：思乡, 写景, 哲理（用英文逗号分隔）"><div class="help">多个主题用英文逗号分隔</div></div>' +
                 '<div class="form-actions" style="display:flex;gap:0.8rem;margin-top:1.5rem;padding-top:1.2rem;border-top:1px solid #e0dcd4;">' +
                 '<button type="button" class="btn" onclick="location.href=\'/detail/' + poemId + '\'">取消</button>' +
                 '<button type="submit" class="btn btn-primary" id="submitBtn">更新</button>' +
-                '</div></form>';
+                '</div></form>' +
+                '<section class="md-guide">' +
+                '<h3>正文排版说明（HTML）</h3>' +
+                '<div class="md-guide-block"><h4>一、居中</h4><p>诗居中显示。</p><pre>&lt;div style="text-align:center"&gt;\n\n空山新雨后，天气晚来秋。\n明月松间照，清泉石上流。\n\n&lt;/div&gt;</pre></div>' +
+                '<div class="md-guide-block"><h4>二、左对齐</h4><p>词、古风一般左对齐。</p><pre>&lt;div style="text-align:left"&gt;\n\n大江东去，浪淘尽，千古风流人物。\n\n&lt;/div&gt;</pre></div>' +
+                '<div class="md-guide-block"><h4>三、右对齐</h4><pre>&lt;div style="text-align:right"&gt;\n落款文字\n&lt;/div&gt;</pre></div>' +
+                '<div class="md-guide-block"><h4>四、诗句换行</h4><p>直接回车换行，不要空行。不同段落之间可以空一行。</p><pre>空山新雨后，天气晚来秋。\n明月松间照，清泉石上流。</pre></div>' +
+                '<div class="md-guide-block"><h4>五、强调</h4><pre>&lt;strong&gt;加粗文字&lt;/strong&gt;\n&lt;em&gt;斜体文字&lt;/em&gt;\n&lt;span style="color:#a07060;"&gt;彩色文字&lt;/span&gt;</pre></div>' +
+                '<div class="md-guide-block"><h4>六、引用批语</h4><p>用于写评语、出处，会显示为带左侧竖线的引用块。</p><pre>&lt;blockquote&gt;王维此诗，诗中有画，画中有诗。&lt;/blockquote&gt;</pre></div>' +
+                '<div class="md-guide-block"><h4>七、插入图片</h4><p>点击上方「📷 插入图片」按钮上传，系统会自动插入；也可手动写外链图片。</p><pre>&lt;img src="/uploads/xxx.jpg" class="md-image"&gt;\n&lt;img src="https://example.com/pic.jpg" class="md-image"&gt;</pre><p>可指定宽度：</p><pre>&lt;img src="/uploads/xxx.jpg" class="md-image" style="width:300px"&gt;\n&lt;img src="/uploads/xxx.jpg" class="md-image" style="width:50%"&gt;</pre></div>' +
+                '<div class="md-guide-block"><h4>八、分割线</h4><pre>&lt;hr&gt;</pre></div>' +
+                '</section>';
 
             formArea.innerHTML = html;
             bindEvents();
@@ -148,9 +177,62 @@
             var checkResult = document.getElementById('checkResult');
             var checkLegend = document.getElementById('checkLegend');
             var contentTextarea = document.getElementById('content');
+            var imageInput = document.getElementById('imageInput');
+
+            function insertAtCursor(ta, text) {
+                var start = ta.selectionStart;
+                var end = ta.selectionEnd;
+                var before = ta.value.substring(0, start);
+                var after = ta.value.substring(end);
+                ta.value = before + text + after;
+                var newPos = start + text.length;
+                ta.focus();
+                ta.setSelectionRange(newPos, newPos);
+            }
+
+            function stripHtml(html) {
+                var tmp = document.createElement('div');
+                tmp.innerHTML = html;
+                return (tmp.textContent || tmp.innerText || '').trim();
+            }
+
+            imageInput.addEventListener('change', function() {
+                var file = imageInput.files[0];
+                if (!file) return;
+
+                if (file.size > 5 * 1024 * 1024) {
+                    showToast('图片不能超过 5MB', 'error');
+                    imageInput.value = '';
+                    return;
+                }
+
+                var formData = new FormData();
+                formData.append('file', file);
+
+                imageInput.disabled = true;
+
+                fetch('/api/upload', { method: 'POST', body: formData })
+                    .then(function(r) { return r.json(); })
+                    .then(function(res) {
+                        imageInput.disabled = false;
+                        imageInput.value = '';
+                        if (res.code !== 0) {
+                            showToast(res.msg || '上传失败', 'error');
+                            return;
+                        }
+                        var tag = '<img src="/uploads/' + res.filename + '" class="md-image">';
+                        insertAtCursor(contentTextarea, '\n' + tag + '\n');
+                        showToast('图片已插入', 'success');
+                    })
+                    .catch(function() {
+                        imageInput.disabled = false;
+                        imageInput.value = '';
+                        showToast('上传失败，请重试', 'error');
+                    });
+            });
 
             checkBtn.addEventListener('click', function() {
-                var text = contentTextarea.value.trim();
+                var text = stripHtml(contentTextarea.value);
                 if (!text) {
                     showToast('请先输入正文内容', 'error');
                     return;
@@ -212,6 +294,7 @@
                     author: document.getElementById('author').value.trim(),
                     dynasty: document.getElementById('dynasty').value.trim(),
                     genre: document.getElementById('genre').value,
+                    type: document.getElementById('type').value,
                     content: document.getElementById('content').value.trim(),
                     annotation: document.getElementById('annotation').value.trim(),
                     appreciation: document.getElementById('appreciation').value.trim(),

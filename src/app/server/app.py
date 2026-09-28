@@ -2,28 +2,36 @@
 # -*- coding: utf-8 -*-
 """
 诗篓 —— 私人诗词工作台
-版本: 1.1.0
-- 所有用户可见全部诗稿
-- 仅录入用户（或管理员）可编辑/删除
+版本: 1.2.0
+- 所有用户可见全部诗稿，仅录入用户（或管理员）可编辑/删除
 - 显示名称（display_name）支持中文
+- 作品类型：收录 / 原创
+- 正文支持 HTML 排版，图片以 <img> 语法插入正文
+- 导出时自动剥离 HTML 标签，输出纯文本
 """
 
 import sys
 import os
+import json
+import time
+import random
+import string
+import sqlite3
+import re
+from html.parser import HTMLParser
+from datetime import datetime
+from functools import wraps
 
 VENDOR_DIR = os.path.join(os.path.dirname(__file__), 'vendor')
 if os.path.exists(VENDOR_DIR):
     sys.path.insert(0, VENDOR_DIR)
 
-from flask import Flask, g, request, jsonify, session, redirect
-import sqlite3
-import json
-from datetime import datetime
-from functools import wraps
+from flask import Flask, g, request, jsonify, session, redirect, send_from_directory
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__, static_folder='../ui', static_url_path='/static')
 app.config['SECRET_KEY'] = 'poetry-basket-local-only-2026'
-app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024
+app.config['MAX_CONTENT_LENGTH'] = 20 * 1024 * 1024
 
 TRIM_PKGVAR = os.environ.get('TRIM_PKGVAR', '/var/data')
 TRIM_SERVICE_PORT = int(os.environ.get('TRIM_SERVICE_PORT', 5678))
@@ -34,6 +42,91 @@ os.makedirs(TRIM_PKGVAR, exist_ok=True)
 os.makedirs(os.path.dirname(USER_FILE), exist_ok=True)
 
 # ============================================================
+# 图片存储目录（从 TRIM_APPDEST 软链接反推存储池，不写死路径）
+# ============================================================
+def find_upload_dir():
+    # 1. 优先使用系统注入的共享目录变量
+    share_path = os.environ.get('TRIM_DATA_SHARE_PATH', '')
+    if share_path:
+        first = share_path.split(':')[0]
+        if os.path.isdir(first):
+            return os.path.join(first, 'poetry-basket', 'uploads')
+
+    # 2. 从 TRIM_APPDEST 软链接反推存储池根目录
+    #    /var/apps/poetry-basket/target -> /vol1/@appcenter/poetry-basket
+    appdest = os.environ.get('TRIM_APPDEST', '')
+    if appdest:
+        real = os.path.realpath(appdest)
+        parts = real.split('/')
+        # parts = ['', 'vol1', '@appcenter', 'poetry-basket']
+        if len(parts) >= 3:
+            vol_root = '/' + parts[1]
+            return os.path.join(vol_root, '@appshare', 'poetry-basket', 'uploads')
+
+    # 3. 最终回退到应用数据目录
+    return os.path.join(TRIM_PKGVAR, 'uploads')
+
+UPLOAD_DIR = find_upload_dir()
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+ALLOWED_EXTENSIONS = {'jpg', 'jpeg', 'png', 'webp', 'gif'}
+MAX_IMAGE_SIZE = 5 * 1024 * 1024
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def generate_filename(ext):
+    ts = int(time.time())
+    rand = ''.join(random.choices(string.ascii_lowercase + string.digits, k=6))
+    return f"{ts}_{rand}.{ext}"
+
+# ============================================================
+# HTML → 纯文本
+# ============================================================
+class _HTMLTextExtractor(HTMLParser):
+    BLOCK_TAGS = {'div', 'p', 'blockquote', 'li', 'tr',
+                  'h1', 'h2', 'h3', 'h4', 'h5', 'h6'}
+    BREAK_TAGS = {'br', 'hr'}
+
+    def __init__(self):
+        super().__init__()
+        self.result = []
+
+    def handle_starttag(self, tag, attrs):
+        if tag in self.BREAK_TAGS:
+            self.result.append('\n')
+        elif tag in self.BLOCK_TAGS:
+            if self.result and not self.result[-1].endswith('\n'):
+                self.result.append('\n')
+
+    def handle_endtag(self, tag):
+        if tag in self.BLOCK_TAGS:
+            if self.result and not self.result[-1].endswith('\n'):
+                self.result.append('\n')
+
+    def handle_data(self, data):
+        self.result.append(data)
+
+def html_to_text(html):
+    """将 HTML 内容转为纯文本，保留段落/换行结构"""
+    if not html:
+        return ''
+    if '<' not in html:
+        return html.strip()
+    parser = _HTMLTextExtractor()
+    try:
+        parser.feed(html)
+        parser.close()
+    except Exception:
+        return html.strip()
+    text = ''.join(parser.result)
+    # 合并 3 个以上连续换行为 2 个
+    text = re.sub(r'\n{3,}', '\n\n', text)
+    # 去掉每行尾部空格
+    lines = [line.rstrip() for line in text.split('\n')]
+    return '\n'.join(lines).strip()
+
+# ============================================================
 # 用户管理
 # ============================================================
 def load_users():
@@ -42,7 +135,6 @@ def load_users():
             with open(USER_FILE, 'r', encoding='utf-8') as f:
                 users = json.load(f)
                 if users:
-                    # 确保老用户有 display_name
                     for name, info in users.items():
                         if 'display_name' not in info:
                             info['display_name'] = name
@@ -86,7 +178,6 @@ def is_admin_user():
     return users.get(get_current_user(), {}).get('admin', False)
 
 def can_edit_poem(poem_id):
-    """检查当前用户是否有权限编辑/删除指定诗词"""
     current_user = get_current_user()
     db = get_db()
     cursor = db.cursor()
@@ -99,7 +190,6 @@ def can_edit_poem(poem_id):
     return False, '只能操作自己录入的诗'
 
 def attach_display_name(poems_or_poem):
-    """为诗词数据附加 display_name"""
     users = load_users()
     if isinstance(poems_or_poem, list):
         for p in poems_or_poem:
@@ -260,10 +350,14 @@ def init_db():
 
     cursor.execute("PRAGMA table_info(poems)")
     columns = [col[1] for col in cursor.fetchall()]
+
     if 'user_id' not in columns:
         cursor.execute("ALTER TABLE poems ADD COLUMN user_id TEXT DEFAULT 'admin'")
         cursor.execute("UPDATE poems SET user_id = 'admin' WHERE user_id IS NULL")
-        conn.commit()
+
+    if 'type' not in columns:
+        cursor.execute("ALTER TABLE poems ADD COLUMN type TEXT DEFAULT '收录'")
+        cursor.execute("UPDATE poems SET type = '收录' WHERE type IS NULL")
 
     conn.commit()
     conn.close()
@@ -382,6 +476,65 @@ def api_user():
             }
         })
     return jsonify({'code': 401, 'msg': '未登录'}), 401
+
+# ============================================================
+# 图片上传 API
+# ============================================================
+@app.route('/api/upload', methods=['POST'])
+@auth_required
+def api_upload():
+    if 'file' not in request.files:
+        return jsonify({'code': 400, 'msg': '未选择文件'})
+
+    file = request.files['file']
+    if not file or file.filename == '':
+        return jsonify({'code': 400, 'msg': '未选择文件'})
+
+    if not allowed_file(file.filename):
+        return jsonify({'code': 400, 'msg': '仅支持 jpg / png / webp / gif 格式'})
+
+    file.seek(0, os.SEEK_END)
+    size = file.tell()
+    file.seek(0)
+    if size > MAX_IMAGE_SIZE:
+        return jsonify({'code': 400, 'msg': '图片大小不能超过 5MB'})
+
+    ext = file.filename.rsplit('.', 1)[1].lower()
+    if ext == 'jpeg':
+        ext = 'jpg'
+    filename = generate_filename(ext)
+
+    try:
+        file.save(os.path.join(UPLOAD_DIR, filename))
+    except Exception as e:
+        return jsonify({'code': 500, 'msg': f'保存失败：{str(e)}'})
+
+    return jsonify({
+        'code': 0,
+        'msg': '上传成功',
+        'filename': filename
+    })
+
+@app.route('/api/upload/<filename>', methods=['DELETE'])
+@auth_required
+def api_delete_upload(filename):
+    filename = secure_filename(filename)
+    if not filename:
+        return jsonify({'code': 400, 'msg': '文件名无效'})
+
+    filepath = os.path.join(UPLOAD_DIR, filename)
+    if os.path.exists(filepath):
+        try:
+            os.remove(filepath)
+        except Exception as e:
+            return jsonify({'code': 500, 'msg': f'删除失败：{str(e)}'})
+    return jsonify({'code': 0, 'msg': '删除成功'})
+
+@app.route('/uploads/<filename>')
+@auth_required
+def serve_upload(filename):
+    filename = secure_filename(filename)
+    return send_from_directory(UPLOAD_DIR, filename)
 
 # ============================================================
 # 管理员修改密码
@@ -524,10 +677,9 @@ def admin_page():
     return app.send_static_file('admin.html')
 
 # ============================================================
-# 诗词 API（1.1.0：所有人可见，仅本人/管理员可编辑删除）
+# 诗词 API
 # ============================================================
 
-# ----- 列表：所有人可见 -----
 @app.route('/api/poems')
 @auth_required
 def api_poems():
@@ -535,12 +687,13 @@ def api_poems():
     tag = request.args.get('tag', '').strip()
     author = request.args.get('author', '').strip()
     dynasty = request.args.get('dynasty', '').strip()
+    poem_type = request.args.get('type', '').strip()
 
     db = get_db()
     cursor = db.cursor()
 
     params = []
-    sql = 'SELECT id, title, author, dynasty, genre, tags, user_id, created_at FROM poems WHERE 1=1'
+    sql = 'SELECT id, title, author, dynasty, genre, tags, type, user_id, created_at FROM poems WHERE 1=1'
 
     if keyword:
         sql += ' AND (title LIKE ? OR author LIKE ? OR content LIKE ? OR tags LIKE ?)'
@@ -554,16 +707,17 @@ def api_poems():
     if dynasty:
         sql += ' AND dynasty LIKE ?'
         params.append(f'%{dynasty}%')
+    if poem_type:
+        sql += ' AND type = ?'
+        params.append(poem_type)
 
     sql += ' ORDER BY created_at DESC'
     cursor.execute(sql, params)
     poems = [dict(row) for row in cursor.fetchall()]
 
-    # 附加 display_name
     attach_display_name(poems)
     return jsonify({'code': 0, 'data': poems})
 
-# ----- 详情：所有人可见 -----
 @app.route('/api/poem/<int:poem_id>')
 @auth_required
 def api_poem_detail(poem_id):
@@ -577,7 +731,6 @@ def api_poem_detail(poem_id):
     attach_display_name(poem_data)
     return jsonify({'code': 0, 'data': poem_data})
 
-# ----- 创建：记录当前用户为录入人 -----
 @app.route('/api/poem', methods=['POST'])
 @auth_required
 def api_create_poem():
@@ -590,21 +743,24 @@ def api_create_poem():
     annotation = data.get('annotation', '').strip()
     appreciation = data.get('appreciation', '').strip()
     tags = data.get('tags', '').strip()
+    poem_type = data.get('type', '收录').strip()
     current_user = get_current_user()
 
     if not title or not author or not content:
         return jsonify({'code': 400, 'msg': '标题、作者、正文为必填项'})
 
+    if poem_type not in ('收录', '原创'):
+        poem_type = '收录'
+
     db = get_db()
     cursor = db.cursor()
     cursor.execute('''
-        INSERT INTO poems (title, author, dynasty, genre, content, annotation, appreciation, tags, user_id)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ''', (title, author, dynasty, genre, content, annotation, appreciation, tags, current_user))
+        INSERT INTO poems (title, author, dynasty, genre, content, annotation, appreciation, tags, type, user_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ''', (title, author, dynasty, genre, content, annotation, appreciation, tags, poem_type, current_user))
     db.commit()
     return jsonify({'code': 0, 'msg': '添加成功', 'id': cursor.lastrowid})
 
-# ----- 更新：仅本人或管理员 -----
 @app.route('/api/poem/<int:poem_id>', methods=['PUT'])
 @auth_required
 def api_update_poem(poem_id):
@@ -617,14 +773,17 @@ def api_update_poem(poem_id):
     annotation = data.get('annotation', '').strip()
     appreciation = data.get('appreciation', '').strip()
     tags = data.get('tags', '').strip()
+    poem_type = data.get('type', '收录').strip()
 
     if not title or not author or not content:
         return jsonify({'code': 400, 'msg': '标题、作者、正文为必填项'})
 
-    # 权限检查
     allowed, msg = can_edit_poem(poem_id)
     if not allowed:
         return jsonify({'code': 403, 'msg': msg}), 403
+
+    if poem_type not in ('收录', '原创'):
+        poem_type = '收录'
 
     db = get_db()
     cursor = db.cursor()
@@ -632,13 +791,13 @@ def api_update_poem(poem_id):
         UPDATE poems SET
             title = ?, author = ?, dynasty = ?, genre = ?,
             content = ?, annotation = ?, appreciation = ?, tags = ?,
+            type = ?,
             updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
-    ''', (title, author, dynasty, genre, content, annotation, appreciation, tags, poem_id))
+    ''', (title, author, dynasty, genre, content, annotation, appreciation, tags, poem_type, poem_id))
     db.commit()
     return jsonify({'code': 0, 'msg': '更新成功'})
 
-# ----- 删除：仅本人或管理员 -----
 @app.route('/api/poem/<int:poem_id>', methods=['DELETE'])
 @auth_required
 def api_delete_poem(poem_id):
@@ -652,7 +811,6 @@ def api_delete_poem(poem_id):
     db.commit()
     return jsonify({'code': 0, 'msg': '删除成功'})
 
-# ----- 标签：所有人可见 -----
 @app.route('/api/tags')
 @auth_required
 def api_tags():
@@ -668,7 +826,6 @@ def api_tags():
                 tags_set.add(t)
     return jsonify({'code': 0, 'data': sorted(tags_set)})
 
-# ----- 统计：所有人可见 -----
 @app.route('/api/stats')
 @auth_required
 def api_stats():
@@ -682,7 +839,6 @@ def api_stats():
     tags = cursor.fetchone()['tags']
     return jsonify({'code': 0, 'data': {'total': total, 'authors': authors, 'tags': tags}})
 
-# ----- 导出：所有人可导出 -----
 @app.route('/api/export/<int:poem_id>')
 @auth_required
 def api_export_poem(poem_id):
@@ -696,18 +852,23 @@ def api_export_poem(poem_id):
     users = load_users()
     display_name = users.get(poem['user_id'], {}).get('display_name', poem['user_id'])
 
+    content_text = html_to_text(poem['content'])
+    annotation_text = html_to_text(poem['annotation'] or '')
+    appreciation_text = html_to_text(poem['appreciation'] or '')
+
     content = f"""
 ========================================
 {poem['title']}
 {poem['author']}  {poem['dynasty']}  【{poem['genre']}】
 ========================================
 
-{poem['content']}
+{content_text}
 
-{poem['annotation'] if poem['annotation'] else ''}
+{annotation_text if annotation_text else ''}
 
-{poem['appreciation'] if poem['appreciation'] else ''}
+{appreciation_text if appreciation_text else ''}
 
+类型：{poem['type'] if poem['type'] else '收录'}
 主题：{poem['tags'] if poem['tags'] else '无'}
 录入人：{display_name}
 录入时间：{poem['created_at']}
@@ -715,7 +876,6 @@ def api_export_poem(poem_id):
 """
     return jsonify({'code': 0, 'data': {'title': poem['title'], 'content': content}})
 
-# ----- 批量导出 -----
 @app.route('/api/export/batch', methods=['POST'])
 @auth_required
 def api_export_batch():
@@ -745,22 +905,26 @@ def api_export_batch():
 
     for p in poems:
         display_name = users.get(p['user_id'], {}).get('display_name', p['user_id'])
+        content_text = html_to_text(p['content'])
+        annotation_text = html_to_text(p['annotation'] or '')
+        appreciation_text = html_to_text(p['appreciation'] or '')
+
         lines.append(f'《{p["title"]}》')
         lines.append('')
-        lines.append(f'作者：{p["author"]}    朝代：{p["dynasty"] or "—"}    体裁：{p["genre"] or "诗"}')
+        lines.append(f'作者：{p["author"]}    朝代：{p["dynasty"] or "—"}    体裁：{p["genre"] or "诗"}    类型：{p["type"] or "收录"}')
         lines.append(f'录入人：{display_name}')
         lines.append('')
-        lines.append(p['content'].strip())
+        lines.append(content_text)
         lines.append('')
 
-        if p['annotation'] and p['annotation'].strip():
+        if annotation_text:
             lines.append('笺注：')
-            lines.append(p['annotation'].strip())
+            lines.append(annotation_text)
             lines.append('')
 
-        if p['appreciation'] and p['appreciation'].strip():
+        if appreciation_text:
             lines.append('赏析：')
-            lines.append(p['appreciation'].strip())
+            lines.append(appreciation_text)
             lines.append('')
 
         if p['tags'] and p['tags'].strip():
@@ -773,13 +937,13 @@ def api_export_batch():
     markdown = '\n'.join(lines)
     return jsonify({'code': 0, 'data': {'markdown': markdown, 'count': len(poems)}})
 
-# ----- 格律校验 -----
 @app.route('/api/check', methods=['POST'])
 @auth_required
 def api_check():
     text = request.json.get('text', '').strip()
     if not text:
         return jsonify({'code': 400, 'msg': '请输入诗句'})
+    text = html_to_text(text)
     result = analyze_rhythm_pingshui(text)
     return jsonify({'code': 0, 'data': result})
 

@@ -138,6 +138,7 @@
             flex-wrap: wrap;
             gap: 0.6rem;
             margin-bottom: 0.3rem;
+            align-items: center;
         }
         .poem-card .meta .genre {
             background: #edeae4;
@@ -240,6 +241,11 @@
                 <button id="clearBtn" style="display:none;background:transparent;border-color:transparent;color:#b0a898;">清空</button>
             </div>
             <div class="filters">
+                <select id="filterType">
+                    <option value="">全部类型</option>
+                    <option value="收录">收录</option>
+                    <option value="原创">原创</option>
+                </select>
                 <select id="filterAuthor"><option value="">全部作者</option></select>
                 <select id="filterDynasty"><option value="">全部朝代</option></select>
                 <select id="filterTag"><option value="">全部主题</option></select>
@@ -271,6 +277,7 @@
         var keywordInput = document.getElementById('keyword');
         var searchBtn = document.getElementById('searchBtn');
         var clearBtn = document.getElementById('clearBtn');
+        var filterType = document.getElementById('filterType');
         var filterAuthor = document.getElementById('filterAuthor');
         var filterDynasty = document.getElementById('filterDynasty');
         var filterTag = document.getElementById('filterTag');
@@ -347,6 +354,7 @@
 
         function loadPoems() {
             var keyword = keywordInput.value.trim();
+            var type = filterType.value;
             var author = filterAuthor.value;
             var dynasty = filterDynasty.value;
             var tag = filterTag.value;
@@ -354,6 +362,7 @@
             var url = '/api/poems?';
             var params = [];
             if (keyword) params.push('keyword=' + encodeURIComponent(keyword));
+            if (type) params.push('type=' + encodeURIComponent(type));
             if (author) params.push('author=' + encodeURIComponent(author));
             if (dynasty) params.push('dynasty=' + encodeURIComponent(dynasty));
             if (tag) params.push('tag=' + encodeURIComponent(tag));
@@ -389,16 +398,22 @@
             }
 
             grid.innerHTML = pageData.map(function(p) {
-                var excerpt = p.content ? p.content.replace(/\n/g, ' ').slice(0, 60) + '…' : '';
+                var excerpt = p.content ? p.content.replace(/[#*>`\n]/g, ' ').replace(/\s+/g, ' ').slice(0, 60) + '…' : '';
                 var themes = p.tags ? p.tags.split(',').map(function(t) { return t.trim(); }).filter(function(t) { return t; }) : [];
                 var displayName = p.display_name || p.user_id || '未知';
+                var poemType = p.type || '收录';
+                var typeClass = poemType === '原创' ? 'type-original' : 'type-collect';
+                var hasImages = p.images && p.images.length > 0;
+                var imgBadge = hasImages ? '<span class="img-badge">图文</span>' : '';
+
                 return '<div class="poem-card" onclick="if(event.target.tagName!==\'INPUT\') location.href=\'/detail/' + p.id + '\'">' +
                     '<input type="checkbox" class="poem-checkbox" value="' + p.id + '" onclick="event.stopPropagation();">' +
-                    '<div class="title">' + p.title + '</div>' +
+                    '<div class="title">' + p.title + imgBadge + '</div>' +
                     '<div class="meta">' +
                     '<span>' + p.author + '</span>' +
                     (p.dynasty ? '<span>' + p.dynasty + '</span>' : '') +
                     '<span class="genre">' + (p.genre || '诗') + '</span>' +
+                    '<span class="type-badge ' + typeClass + '">' + poemType + '</span>' +
                     '<span class="owner">📌 ' + displayName + '</span>' +
                     '<span style="font-size:0.7rem;color:#b0a898;">' + (p.created_at ? p.created_at.slice(0,10) : '') + '</span>' +
                     '</div>' +
@@ -421,7 +436,7 @@
                 pagination.style.display = 'none';
             }
 
-            var hasFilter = keywordInput.value.trim() || filterAuthor.value || filterDynasty.value || filterTag.value;
+            var hasFilter = keywordInput.value.trim() || filterType.value || filterAuthor.value || filterDynasty.value || filterTag.value;
             clearBtn.style.display = hasFilter ? 'inline' : 'none';
         }
 
@@ -466,11 +481,13 @@
         keywordInput.addEventListener('keyup', function(e) { if (e.key === 'Enter') loadPoems(); });
         clearBtn.addEventListener('click', function() {
             keywordInput.value = '';
+            filterType.value = '';
             filterAuthor.value = '';
             filterDynasty.value = '';
             filterTag.value = '';
             loadPoems();
         });
+        filterType.addEventListener('change', loadPoems);
         filterAuthor.addEventListener('change', loadPoems);
         filterDynasty.addEventListener('change', loadPoems);
         filterTag.addEventListener('change', loadPoems);

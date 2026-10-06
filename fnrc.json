@@ -1,0 +1,22 @@
+{
+  "apps": [
+    {
+      "id": "poetry-basket",
+      "name": "诗篓",
+      "version": "1.1.0",
+      "author": "hhxs",
+      "tags": "教育",
+      "repo": "https://github.com/hhxs2025/poetry-basket",
+      "updated_at": "2026-10-06",
+      "download_url": "https://github.com/hhxs2025/poetry-basket/releases/download/1.1.0/poetry-basket-1.1.0.fpk",
+      "type": "原生",
+      "platform": "x86",
+      "sort_order": 0,
+      "release_url": "https://github.com/hhxs2025/poetry-basket/releases/tag/1.1.0"
+    }
+  ],
+  "source_author": "ceshi",
+  "source_name": "ceshi",
+  "source_url": "https://github.com/hhxs2025/poetry-basket/fnrc.json",
+  "updated_at": "2026-10-06"
+}
